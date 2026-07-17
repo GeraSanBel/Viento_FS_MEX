@@ -13,23 +13,13 @@ import requests
 
 # ============ CONFIGURA ESTO ============
 
-# Tu API key de OpenWeatherMap (openweathermap.org/api)
-# Se lee primero de variable de entorno (para GitHub Actions), si no existe usa el texto de aqui.
-OWM_API_KEY = os.environ.get("OWM_API_KEY", "PON_AQUI_TU_API_KEY_DE_OPENWEATHERMAP")
+OWM_API_KEY = os.environ.get("OWM_API_KEY", "837774a4942600dde476923a178e8e9c")
+TELEGRAM_TOKEN = os.environ.get("TELEGRAM_TOKEN", "8697170500:AAEtqRwbO0wxnf9FybgV1eENNFDzhTw956g")
+TELEGRAM_CHAT_ID = os.environ.get("TELEGRAM_CHAT_ID", "8993916335")
 
-# El token que te dio BotFather
-TELEGRAM_TOKEN = os.environ.get("TELEGRAM_TOKEN", "PON_AQUI_TU_TOKEN_DE_TELEGRAM")
-
-# Tu chat_id obtenido con getUpdates
-TELEGRAM_CHAT_ID = os.environ.get("TELEGRAM_CHAT_ID", "PON_AQUI_TU_CHAT_ID")
-
-# Umbral de viento en km/h a partir del cual se considera riesgo
 UMBRAL_KMH = 45
-
-# Cuantas horas hacia adelante revisar en el pronostico (max 120 = 5 dias)
 HORAS_A_FUTURO = 48
 
-# Lugares a monitorear: nombre, latitud, longitud (capital de cada estado)
 UBICACIONES = [
     {"nombre": "Aguascalientes",      "lat": 21.8853, "lon": -102.2916},
     {"nombre": "Baja California",     "lat": 32.6245, "lon": -115.4523},
@@ -69,11 +59,6 @@ UBICACIONES = [
 
 
 def obtener_pronostico_viento(lat, lon):
-    """
-    Consulta el pronostico de OpenWeatherMap (bloques de 3 horas) y regresa
-    el punto con mayor viento dentro de las proximas HORAS_A_FUTURO,
-    junto con la fecha/hora en que se espera.
-    """
     url = "https://api.openweathermap.org/data/2.5/forecast"
     params = {
         "lat": lat,
@@ -85,7 +70,7 @@ def obtener_pronostico_viento(lat, lon):
     respuesta.raise_for_status()
     datos = respuesta.json()
 
-    bloques_a_revisar = HORAS_A_FUTURO // 3  # el pronostico viene cada 3 horas
+    bloques_a_revisar = HORAS_A_FUTURO // 3
 
     peor_velocidad = 0
     peor_rafaga = 0
@@ -100,13 +85,52 @@ def obtener_pronostico_viento(lat, lon):
         if maximo_bloque > max(peor_velocidad, peor_rafaga):
             peor_velocidad = velocidad_kmh
             peor_rafaga = rafaga_kmh
-            peor_hora = bloque.get("dt_txt")  # ej: "2026-07-18 15:00:00"
+            peor_hora = bloque.get("dt_txt")
 
     return peor_velocidad, peor_rafaga, peor_hora
 
 
+def obtener_ciclones_activos():
+    url = "https://www.nhc.noaa.gov/CurrentStorms.json"
+    try:
+        respuesta = requests.get(url, timeout=15)
+        respuesta.raise_for_status()
+        datos = respuesta.json()
+    except Exception as error:
+        print(f"Error consultando NHC: {error}")
+        return []
+
+    ciclones = []
+    for tormenta in datos.get("activeStorms", []):
+        storm_id = tormenta.get("id", "")
+        if not (storm_id.startswith("AL") or storm_id.startswith("EP")):
+            continue
+
+        ciclones.append({
+            "nombre": tormenta.get("name", "Desconocido"),
+            "clasificacion": tormenta.get("classification", ""),
+            "intensidad_mph": tormenta.get("intensity", "N/D"),
+            "lat": tormenta.get("latitudeNumeric"),
+            "lon": tormenta.get("longitudeNumeric"),
+            "movimiento": tormenta.get("movementDir", ""),
+        })
+
+    return ciclones
+
+
+def formatear_ciclon(ciclon):
+    clasificaciones = {
+        "HU": "Huracan",
+        "TS": "Tormenta tropical",
+        "TD": "Depresion tropical",
+        "STS": "Tormenta subtropical",
+        "STD": "Depresion subtropical",
+    }
+    tipo = clasificaciones.get(ciclon["clasificacion"], ciclon["clasificacion"] or "Sistema tropical")
+    return f"- {tipo} {ciclon['nombre']}: vientos {ciclon['intensidad_mph']} mph"
+
+
 def enviar_telegram(mensaje):
-    """Envia un mensaje usando el bot de Telegram."""
     url = f"https://api.telegram.org/bot{TELEGRAM_TOKEN}/sendMessage"
     payload = {
         "chat_id": TELEGRAM_CHAT_ID,
@@ -117,7 +141,7 @@ def enviar_telegram(mensaje):
 
 
 def revisar_y_alertar():
-    alertas = []
+    alertas_viento = []
 
     for lugar in UBICACIONES:
         try:
@@ -130,20 +154,37 @@ def revisar_y_alertar():
         print(f"{lugar['nombre']}: max previsto {velocidad:.1f} km/h, rafaga {rafaga:.1f} km/h a las {hora}")
 
         if maximo >= UMBRAL_KMH:
-            alertas.append(
+            alertas_viento.append(
                 f"- {lugar['nombre']}: hasta {velocidad:.0f} km/h (rafagas {rafaga:.0f} km/h) previsto para {hora}"
             )
 
-    if alertas:
-        mensaje = (
-            "⚠️ ALERTA DE VIENTO PRONOSTICADO ⚠️\n"
+    ciclones = obtener_ciclones_activos()
+    for c in ciclones:
+        print(f"Ciclon activo: {c['nombre']} ({c['clasificacion']}), {c['intensidad_mph']} mph")
+
+    bloques_mensaje = []
+
+    if alertas_viento:
+        bloques_mensaje.append(
+            "VIENTO PRONOSTICADO\n"
             f"Se espera superar {UMBRAL_KMH} km/h en las proximas {HORAS_A_FUTURO}h en:\n"
-            + "\n".join(alertas)
+            + "\n".join(alertas_viento)
         )
+
+    if ciclones:
+        lineas_ciclones = [formatear_ciclon(c) for c in ciclones]
+        bloques_mensaje.append(
+            "CICLONES ACTIVOS (Atlantico / Pacifico)\n"
+            + "\n".join(lineas_ciclones)
+            + "\nRevisa nhc.noaa.gov o conagua.gob.mx para trayectoria y avisos oficiales."
+        )
+
+    if bloques_mensaje:
+        mensaje = "\n\n".join(bloques_mensaje)
         enviado = enviar_telegram(mensaje)
         print("Alerta enviada por Telegram" if enviado else "Fallo el envio de Telegram")
     else:
-        print("Sin riesgos de viento pronosticado por ahora, no se envia alerta.")
+        print("Sin riesgos de viento ni ciclones activos por ahora, no se envia alerta.")
 
 
 if __name__ == "__main__":
