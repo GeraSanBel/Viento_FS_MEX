@@ -217,7 +217,11 @@ def revisar_y_alertar():
         print("Alerta enviada por Telegram" if enviado else "Fallo el envio de Telegram")
     elif hora_actual_utc in HORAS_CONFIRMACION_UTC:
         # Solo se manda confirmacion de "sin riesgo" en las horas configuradas
-        mensaje = "Sin riesgos de viento ni ciclones activos por ahora en los 32 estados."
+        mensaje = (
+            "Reporte de rutina:\n"
+            "- Sin viento fuerte pronosticado en los 32 estados.\n"
+            "- Sin ciclones activos en Atlantico/Pacifico."
+        )
         enviado = enviar_telegram(mensaje)
         print("Confirmacion de sin riesgo enviada" if enviado else "Fallo el envio de Telegram")
     else:
