@@ -27,7 +27,7 @@ TELEGRAM_CHAT_ID = os.environ.get("TELEGRAM_CHAT_ID", "PON_AQUI_TU_CHAT_ID")
 UMBRAL_KMH = 45
 
 # Cuantas horas hacia adelante revisar en el pronostico (max 120 = 5 dias)
-HORAS_A_FUTURO = 24
+HORAS_A_FUTURO = 48
 
 # Lugares a monitorear: nombre, latitud, longitud (capital de cada estado)
 UBICACIONES = [
