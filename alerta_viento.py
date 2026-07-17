@@ -9,17 +9,32 @@ Requisitos:
 """
 
 import os
+from datetime import datetime, timezone
 import requests
 
 # ============ CONFIGURA ESTO ============
 
+# Tu API key de OpenWeatherMap (openweathermap.org/api)
+# Se lee primero de variable de entorno (para GitHub Actions), si no existe usa el texto de aqui.
 OWM_API_KEY = os.environ.get("OWM_API_KEY", "837774a4942600dde476923a178e8e9c")
+
+# El token que te dio BotFather
 TELEGRAM_TOKEN = os.environ.get("TELEGRAM_TOKEN", "8697170500:AAEtqRwbO0wxnf9FybgV1eENNFDzhTw956g")
+
+# Tu chat_id obtenido con getUpdates
 TELEGRAM_CHAT_ID = os.environ.get("TELEGRAM_CHAT_ID", "8993916335")
 
+# Umbral de viento en km/h a partir del cual se considera riesgo
 UMBRAL_KMH = 45
+
+# Cuantas horas hacia adelante revisar en el pronostico (max 120 = 5 dias)
 HORAS_A_FUTURO = 48
 
+# Horas del dia (en UTC) en que se manda el aviso de "sin riesgo" si no hay alertas.
+# Las alertas reales (viento fuerte o ciclones) se mandan siempre, sin importar la hora.
+HORAS_CONFIRMACION_UTC = {0, 6, 12, 18}
+
+# Lugares a monitorear: nombre, latitud, longitud (capital de cada estado)
 UBICACIONES = [
     {"nombre": "Aguascalientes",      "lat": 21.8853, "lon": -102.2916},
     {"nombre": "Baja California",     "lat": 32.6245, "lon": -115.4523},
@@ -59,6 +74,11 @@ UBICACIONES = [
 
 
 def obtener_pronostico_viento(lat, lon):
+    """
+    Consulta el pronostico de OpenWeatherMap (bloques de 3 horas) y regresa
+    el punto con mayor viento dentro de las proximas HORAS_A_FUTURO,
+    junto con la fecha/hora en que se espera.
+    """
     url = "https://api.openweathermap.org/data/2.5/forecast"
     params = {
         "lat": lat,
@@ -70,7 +90,7 @@ def obtener_pronostico_viento(lat, lon):
     respuesta.raise_for_status()
     datos = respuesta.json()
 
-    bloques_a_revisar = HORAS_A_FUTURO // 3
+    bloques_a_revisar = HORAS_A_FUTURO // 3  # el pronostico viene cada 3 horas
 
     peor_velocidad = 0
     peor_rafaga = 0
@@ -85,12 +105,17 @@ def obtener_pronostico_viento(lat, lon):
         if maximo_bloque > max(peor_velocidad, peor_rafaga):
             peor_velocidad = velocidad_kmh
             peor_rafaga = rafaga_kmh
-            peor_hora = bloque.get("dt_txt")
+            peor_hora = bloque.get("dt_txt")  # ej: "2026-07-18 15:00:00"
 
     return peor_velocidad, peor_rafaga, peor_hora
 
 
 def obtener_ciclones_activos():
+    """
+    Consulta el feed publico del NHC (NOAA) y regresa una lista de ciclones
+    activos en el Atlantico y Pacifico Oriental, que son las cuencas que
+    pueden afectar a Mexico. No requiere API key.
+    """
     url = "https://www.nhc.noaa.gov/CurrentStorms.json"
     try:
         respuesta = requests.get(url, timeout=15)
@@ -103,6 +128,8 @@ def obtener_ciclones_activos():
     ciclones = []
     for tormenta in datos.get("activeStorms", []):
         storm_id = tormenta.get("id", "")
+        # AL = Atlantico, EP = Pacifico Oriental, CP = Pacifico Central
+        # Solo nos interesan AL y EP para Mexico
         if not (storm_id.startswith("AL") or storm_id.startswith("EP")):
             continue
 
@@ -119,6 +146,7 @@ def obtener_ciclones_activos():
 
 
 def formatear_ciclon(ciclon):
+    """Convierte la clasificacion tecnica del NHC a un texto legible."""
     clasificaciones = {
         "HU": "Huracan",
         "TS": "Tormenta tropical",
@@ -131,6 +159,7 @@ def formatear_ciclon(ciclon):
 
 
 def enviar_telegram(mensaje):
+    """Envia un mensaje usando el bot de Telegram."""
     url = f"https://api.telegram.org/bot{TELEGRAM_TOKEN}/sendMessage"
     payload = {
         "chat_id": TELEGRAM_CHAT_ID,
@@ -166,7 +195,7 @@ def revisar_y_alertar():
 
     if alertas_viento:
         bloques_mensaje.append(
-            "VIENTO PRONOSTICADO\n"
+            "⚠️ VIENTO PRONOSTICADO ⚠️\n"
             f"Se espera superar {UMBRAL_KMH} km/h en las proximas {HORAS_A_FUTURO}h en:\n"
             + "\n".join(alertas_viento)
         )
@@ -174,17 +203,25 @@ def revisar_y_alertar():
     if ciclones:
         lineas_ciclones = [formatear_ciclon(c) for c in ciclones]
         bloques_mensaje.append(
-            "CICLONES ACTIVOS (Atlantico / Pacifico)\n"
+            "🌀 CICLONES ACTIVOS (Atlantico / Pacifico) 🌀\n"
             + "\n".join(lineas_ciclones)
             + "\nRevisa nhc.noaa.gov o conagua.gob.mx para trayectoria y avisos oficiales."
         )
 
+    hora_actual_utc = datetime.now(timezone.utc).hour
+
     if bloques_mensaje:
+        # Siempre se manda si hay una alerta real, sin importar la hora
         mensaje = "\n\n".join(bloques_mensaje)
         enviado = enviar_telegram(mensaje)
         print("Alerta enviada por Telegram" if enviado else "Fallo el envio de Telegram")
+    elif hora_actual_utc in HORAS_CONFIRMACION_UTC:
+        # Solo se manda confirmacion de "sin riesgo" en las horas configuradas
+        mensaje = "Sin riesgos de viento ni ciclones activos por ahora en los 32 estados."
+        enviado = enviar_telegram(mensaje)
+        print("Confirmacion de sin riesgo enviada" if enviado else "Fallo el envio de Telegram")
     else:
-        print("Sin riesgos de viento ni ciclones activos por ahora, no se envia alerta.")
+        print(f"Sin riesgos y no es hora de confirmacion (hora UTC actual: {hora_actual_utc}). No se envia nada.")
 
 
 if __name__ == "__main__":
