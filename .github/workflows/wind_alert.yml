@@ -1,0 +1,29 @@
+name: Alerta de Viento
+
+on:
+  schedule:
+    # Corre cada 2 horas (hora UTC). Ajusta si quieres otra frecuencia.
+    - cron: "0 */2 * * *"
+  workflow_dispatch: {}  # Te permite tambien correrlo manualmente desde GitHub
+
+jobs:
+  revisar-viento:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Clonar repositorio
+        uses: actions/checkout@v4
+
+      - name: Configurar Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Instalar dependencias
+        run: pip install requests
+
+      - name: Ejecutar alerta
+        env:
+          OWM_API_KEY: ${{ secrets.OWM_API_KEY }}
+          TELEGRAM_TOKEN: ${{ secrets.TELEGRAM_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+        run: python alerta_viento.py
