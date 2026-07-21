@@ -193,7 +193,7 @@ def revisar_y_alertar():
 
     bloques_mensaje = []
 
-    if alertas_viento:
+   if alertas_viento:
         bloques_mensaje.append(
             "⚠️ VIENTO PRONOSTICADO ⚠️\n"
             f"Se espera superar {UMBRAL_KMH} km/h en las proximas {HORAS_A_FUTURO}h en:\n"
@@ -207,7 +207,8 @@ def revisar_y_alertar():
             + "\n".join(lineas_ciclones)
             + "\nRevisa nhc.noaa.gov o conagua.gob.mx para trayectoria y avisos oficiales."
         )
-
+    elif alertas_viento:
+        bloques_mensaje.append("Sin ciclones activos en Atlantico/Pacifico por ahora.")
     hora_actual_utc = datetime.now(timezone.utc).hour
 
     if bloques_mensaje:
