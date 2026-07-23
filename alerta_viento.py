@@ -9,6 +9,7 @@ Requisitos:
 """
 
 import os
+import json
 from datetime import datetime, timezone
 import requests
 
@@ -20,7 +21,15 @@ TELEGRAM_CHAT_ID = os.environ.get("TELEGRAM_CHAT_ID", "PON_AQUI_TU_CHAT_ID")
 
 UMBRAL_KMH = 45
 HORAS_A_FUTURO = 24
-HORAS_CONFIRMACION_UTC = {0, 6, 12, 18}
+
+# Horas del dia (en UTC) en que se manda el aviso de "sin riesgo" si no hay alertas.
+HORAS_CONFIRMACION_UTC = {6, 12, 18}
+
+# Cada cuantas horas se repite el recordatorio MIENTRAS el riesgo sigue activo
+HORAS_ENTRE_RECORDATORIOS = 6
+
+# Archivo donde se guarda si ya se aviso del riesgo actual (para no repetir cada hora)
+ARCHIVO_ESTADO = "estado_alertas.json"
 
 UBICACIONES = [
     {"nombre": "Aguascalientes",      "lat": 21.8853, "lon": -102.2916},
@@ -130,6 +139,19 @@ def formatear_ciclon(ciclon):
     return f"- {tipo} {ciclon['nombre']}: vientos {ciclon['intensidad_mph']} mph"
 
 
+def cargar_estado():
+    try:
+        with open(ARCHIVO_ESTADO, "r", encoding="utf-8") as f:
+            return json.load(f)
+    except (FileNotFoundError, json.JSONDecodeError):
+        return {"riesgo_activo": False, "ultima_notificacion": None}
+
+
+def guardar_estado(estado):
+    with open(ARCHIVO_ESTADO, "w", encoding="utf-8") as f:
+        json.dump(estado, f)
+
+
 def enviar_telegram(mensaje):
     url = f"https://api.telegram.org/bot{TELEGRAM_TOKEN}/sendMessage"
     payload = {
@@ -182,21 +204,53 @@ def revisar_y_alertar():
         bloques_mensaje.append("Sin ciclones activos en Atlantico/Pacifico por ahora.")
 
     hora_actual_utc = datetime.now(timezone.utc).hour
+    ahora = datetime.now(timezone.utc)
+    estado = cargar_estado()
+    hay_riesgo_ahora = bool(bloques_mensaje)
 
-    if bloques_mensaje:
-        mensaje = "\n\n".join(bloques_mensaje)
-        enviado = enviar_telegram(mensaje)
-        print("Alerta enviada por Telegram" if enviado else "Fallo el envio de Telegram")
-    elif hora_actual_utc in HORAS_CONFIRMACION_UTC:
-        mensaje = (
-            "Reporte de rutina:\n"
-            "- Sin viento fuerte pronosticado en los 32 estados.\n"
-            "- Sin ciclones activos en Atlantico/Pacifico."
+    if hay_riesgo_ahora:
+        riesgo_era_nuevo = not estado.get("riesgo_activo", False)
+
+        horas_desde_ultima = None
+        if estado.get("ultima_notificacion"):
+            ultima = datetime.fromisoformat(estado["ultima_notificacion"])
+            horas_desde_ultima = (ahora - ultima).total_seconds() / 3600
+
+        toca_recordatorio = (
+            horas_desde_ultima is not None and horas_desde_ultima >= HORAS_ENTRE_RECORDATORIOS
         )
-        enviado = enviar_telegram(mensaje)
-        print("Confirmacion de sin riesgo enviada" if enviado else "Fallo el envio de Telegram")
+
+        if riesgo_era_nuevo or toca_recordatorio:
+            mensaje = "\n\n".join(bloques_mensaje)
+            enviado = enviar_telegram(mensaje)
+            print("Alerta enviada por Telegram" if enviado else "Fallo el envio de Telegram")
+            estado = {"riesgo_activo": True, "ultima_notificacion": ahora.isoformat()}
+        else:
+            print("Riesgo sigue activo pero ya se aviso recientemente. No se repite el mensaje.")
+            estado["riesgo_activo"] = True
+
     else:
-        print(f"Sin riesgos y no es hora de confirmacion (hora UTC actual: {hora_actual_utc}). No se envia nada.")
+        riesgo_se_acaba_de_despejar = estado.get("riesgo_activo", False)
+
+        if riesgo_se_acaba_de_despejar:
+            mensaje = "El riesgo de viento/ciclones ha pasado. Condiciones normales en los 32 estados."
+            enviado = enviar_telegram(mensaje)
+            print("Aviso de riesgo despejado enviado" if enviado else "Fallo el envio de Telegram")
+            estado = {"riesgo_activo": False, "ultima_notificacion": ahora.isoformat()}
+        elif hora_actual_utc in HORAS_CONFIRMACION_UTC:
+            mensaje = (
+                "Reporte de rutina:\n"
+                "- Sin viento fuerte pronosticado en los 32 estados.\n"
+                "- Sin ciclones activos en Atlantico/Pacifico."
+            )
+            enviado = enviar_telegram(mensaje)
+            print("Confirmacion de sin riesgo enviada" if enviado else "Fallo el envio de Telegram")
+            estado = {"riesgo_activo": False, "ultima_notificacion": ahora.isoformat()}
+        else:
+            print(f"Sin riesgos y no es hora de confirmacion (hora UTC actual: {hora_actual_utc}). No se envia nada.")
+            estado["riesgo_activo"] = False
+
+    guardar_estado(estado)
 
 
 if __name__ == "__main__":
