@@ -2,9 +2,11 @@ name: Alerta de Viento
 
 on:
   schedule:
-    # Corre cada 2 horas (hora UTC). Ajusta si quieres otra frecuencia.
     - cron: "0 * * * *"
-  workflow_dispatch: {}  # Te permite tambien correrlo manualmente desde GitHub
+  workflow_dispatch: {}
+
+permissions:
+  contents: write
 
 jobs:
   revisar-viento:
@@ -27,3 +29,11 @@ jobs:
           TELEGRAM_TOKEN: ${{ secrets.TELEGRAM_TOKEN }}
           TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
         run: python alerta_viento.py
+
+      - name: Guardar estado
+        run: |
+          git config user.name "github-actions"
+          git config user.email "actions@github.com"
+          git add estado_alertas.json
+          git diff --quiet --cached || git commit -m "Actualizar estado de alertas [skip ci]"
+          git push
