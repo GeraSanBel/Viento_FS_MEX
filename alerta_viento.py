@@ -30,7 +30,7 @@ WHATSAPP_PHONE = os.environ.get("WHATSAPP_PHONE", "525533328765")
 WHATSAPP_APIKEY = os.environ.get("WHATSAPP_APIKEY", "3016308")
 
 # Umbral de viento en km/h a partir del cual se considera riesgo
-UMBRAL_KMH = 20
+UMBRAL_KMH = 0
 
 # Cuantas horas hacia adelante revisar en el pronostico (max 120 = 5 dias)
 HORAS_A_FUTURO = 24
