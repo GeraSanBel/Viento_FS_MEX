@@ -1,0 +1,39 @@
+name: Alerta de Viento
+
+on:
+  schedule:
+    - cron: "0 * * * *"
+  workflow_dispatch: {}
+
+permissions:
+  contents: write
+
+jobs:
+  revisar-viento:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Clonar repositorio
+        uses: actions/checkout@v4
+
+      - name: Configurar Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Instalar dependencias
+        run: pip install requests
+
+      - name: Ejecutar alerta
+        env:
+          OWM_API_KEY: ${{ secrets.OWM_API_KEY }}
+          TELEGRAM_TOKEN: ${{ secrets.TELEGRAM_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+        run: python alerta_viento.py
+
+      - name: Guardar estado
+        run: |
+          git config user.name "github-actions"
+          git config user.email "actions@github.com"
+          git add estado_alertas.json
+          git diff --quiet --cached || git commit -m "Actualizar estado de alertas [skip ci]"
+          git push
