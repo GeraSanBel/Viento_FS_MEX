@@ -1,0 +1,1226 @@
+{
+  "AGUASCALIENTES (AGUASCALIENTES)": {
+    "ciudad": "AGUASCALIENTES",
+    "estado": "AGUASCALIENTES",
+    "lat": 21.880487,
+    "lon": -102.2967195
+  },
+  "ENSENADA (BAJA CALIFORNIA)": {
+    "ciudad": "ENSENADA",
+    "estado": "BAJA CALIFORNIA",
+    "lat": 31.8658887,
+    "lon": -116.602983
+  },
+  "MEXICALI (BAJA CALIFORNIA)": {
+    "ciudad": "MEXICALI",
+    "estado": "BAJA CALIFORNIA",
+    "lat": 32.6405247,
+    "lon": -115.474899
+  },
+  "PLAYAS DE ROSARITO (BAJA CALIFORNIA)": {
+    "ciudad": "PLAYAS DE ROSARITO",
+    "estado": "BAJA CALIFORNIA",
+    "lat": 32.365166,
+    "lon": -117.0557923
+  },
+  "TECATE (BAJA CALIFORNIA)": {
+    "ciudad": "TECATE",
+    "estado": "BAJA CALIFORNIA",
+    "lat": 32.5653831,
+    "lon": -116.6298787
+  },
+  "TIJUANA (BAJA CALIFORNIA)": {
+    "ciudad": "TIJUANA",
+    "estado": "BAJA CALIFORNIA",
+    "lat": 32.5317397,
+    "lon": -117.019529
+  },
+  "LA PAZ (BAJA CALIFORNIA SUR)": {
+    "ciudad": "LA PAZ",
+    "estado": "BAJA CALIFORNIA SUR",
+    "lat": 24.1619948,
+    "lon": -110.3158532
+  },
+  "LOS CABOS (BAJA CALIFORNIA SUR)": {
+    "ciudad": "LOS CABOS",
+    "estado": "BAJA CALIFORNIA SUR",
+    "lat": 23.0698187,
+    "lon": -109.65838094247428
+  },
+  "CAMPECHE (CAMPECHE)": {
+    "ciudad": "CAMPECHE",
+    "estado": "CAMPECHE",
+    "lat": 19.8381215,
+    "lon": -90.5198253
+  },
+  "CIUDAD DE MEXICO (CIUDAD DE MEXICO)": {
+    "ciudad": "CIUDAD DE MEXICO",
+    "estado": "CIUDAD DE MEXICO",
+    "lat": 19.4326296,
+    "lon": -99.1331785
+  },
+  "CHAMULA (CHIAPAS)": {
+    "ciudad": "CHAMULA",
+    "estado": "CHIAPAS",
+    "lat": 16.7872611,
+    "lon": -92.6902316
+  },
+  "CHIAPA DE CORZO (CHIAPAS)": {
+    "ciudad": "CHIAPA DE CORZO",
+    "estado": "CHIAPAS",
+    "lat": 16.7075202,
+    "lon": -93.0115045
+  },
+  "CINTALAPA (CHIAPAS)": {
+    "ciudad": "CINTALAPA",
+    "estado": "CHIAPAS",
+    "lat": 16.6905402,
+    "lon": -93.7257625
+  },
+  "HIDALGO (CHIAPAS)": {
+    "ciudad": "HIDALGO",
+    "estado": "CHIAPAS",
+    "lat": 16.2837507,
+    "lon": -92.2118649
+  },
+  "HUEHUETAN (CHIAPAS)": {
+    "ciudad": "HUEHUETAN",
+    "estado": "CHIAPAS",
+    "lat": 15.0189801,
+    "lon": -92.382246
+  },
+  "HUIXTLA (CHIAPAS)": {
+    "ciudad": "HUIXTLA",
+    "estado": "CHIAPAS",
+    "lat": 15.1385034,
+    "lon": -92.4636455
+  },
+  "JIQUIPILAS (CHIAPAS)": {
+    "ciudad": "JIQUIPILAS",
+    "estado": "CHIAPAS",
+    "lat": 16.6686254,
+    "lon": -93.6461169
+  },
+  "MOTOZINTLA (CHIAPAS)": {
+    "ciudad": "MOTOZINTLA",
+    "estado": "CHIAPAS",
+    "lat": 15.365197,
+    "lon": -92.247749
+  },
+  "OCOZOCOAUTLA DE ESPINOSA (CHIAPAS)": {
+    "ciudad": "OCOZOCOAUTLA DE ESPINOSA",
+    "estado": "CHIAPAS",
+    "lat": 16.7595989,
+    "lon": -93.3738765
+  },
+  "PALENQUE (CHIAPAS)": {
+    "ciudad": "PALENQUE",
+    "estado": "CHIAPAS",
+    "lat": 17.509188,
+    "lon": -91.980922
+  },
+  "PIJIJIAPAN (CHIAPAS)": {
+    "ciudad": "PIJIJIAPAN",
+    "estado": "CHIAPAS",
+    "lat": 15.6849991,
+    "lon": -93.2080195
+  },
+  "SAN CRISTOBAL DE LAS CASAS (CHIAPAS)": {
+    "ciudad": "SAN CRISTOBAL DE LAS CASAS",
+    "estado": "CHIAPAS",
+    "lat": 16.735377,
+    "lon": -92.63873
+  },
+  "SAN FRANCISCO PUJILTIC (CHIAPAS)": {
+    "ciudad": "SAN FRANCISCO PUJILTIC",
+    "estado": "CHIAPAS",
+    "lat": 16.2767438,
+    "lon": -92.4500858
+  },
+  "SUCHIATE (CHIAPAS)": {
+    "ciudad": "SUCHIATE",
+    "estado": "CHIAPAS",
+    "lat": 14.6849932,
+    "lon": -92.1683407
+  },
+  "TAPACHULA (CHIAPAS)": {
+    "ciudad": "TAPACHULA",
+    "estado": "CHIAPAS",
+    "lat": 14.9042905,
+    "lon": -92.2609265
+  },
+  "TONALA (CHIAPAS)": {
+    "ciudad": "TONALA",
+    "estado": "CHIAPAS",
+    "lat": 16.0894476,
+    "lon": -93.7546502
+  },
+  "TUXTLA GUTIERREZ (CHIAPAS)": {
+    "ciudad": "TUXTLA GUTIERREZ",
+    "estado": "CHIAPAS",
+    "lat": 16.753801,
+    "lon": -93.115959
+  },
+  "ALLENDE (CHIHUAHUA)": {
+    "ciudad": "ALLENDE",
+    "estado": "CHIHUAHUA",
+    "lat": 26.9368621,
+    "lon": -105.393039
+  },
+  "CAMARGO (CHIHUAHUA)": {
+    "ciudad": "CAMARGO",
+    "estado": "CHIHUAHUA",
+    "lat": 27.6784285,
+    "lon": -105.1714979
+  },
+  "CHIHUAHUA (CHIHUAHUA)": {
+    "ciudad": "CHIHUAHUA",
+    "estado": "CHIHUAHUA",
+    "lat": 28.6368669,
+    "lon": -106.076745
+  },
+  "DELICIAS (CHIHUAHUA)": {
+    "ciudad": "DELICIAS",
+    "estado": "CHIHUAHUA",
+    "lat": 28.1909814,
+    "lon": -105.469426
+  },
+  "GUADALAJARA (CHIHUAHUA)": {
+    "ciudad": "GUADALAJARA",
+    "estado": "CHIHUAHUA",
+    "lat": 20.6720375,
+    "lon": -103.338396
+  },
+  "HIDALGO DEL PARRAL (CHIHUAHUA)": {
+    "ciudad": "HIDALGO DEL PARRAL",
+    "estado": "CHIHUAHUA",
+    "lat": 26.9287164,
+    "lon": -105.6674058
+  },
+  "JIMENEZ (CHIHUAHUA)": {
+    "ciudad": "JIMENEZ",
+    "estado": "CHIHUAHUA",
+    "lat": 27.1256227,
+    "lon": -104.911862
+  },
+  "JUAREZ (CHIHUAHUA)": {
+    "ciudad": "JUAREZ",
+    "estado": "CHIHUAHUA",
+    "lat": 31.7372575,
+    "lon": -106.485655
+  },
+  "MEOQUI (CHIHUAHUA)": {
+    "ciudad": "MEOQUI",
+    "estado": "CHIHUAHUA",
+    "lat": 28.2713478,
+    "lon": -105.4805069
+  },
+  "OJINAGA (CHIHUAHUA)": {
+    "ciudad": "OJINAGA",
+    "estado": "CHIHUAHUA",
+    "lat": 29.5654282,
+    "lon": -104.4128523
+  },
+  "SANTA BARBARA (CHIHUAHUA)": {
+    "ciudad": "SANTA BARBARA",
+    "estado": "CHIHUAHUA",
+    "lat": 26.8031509,
+    "lon": -105.8191974
+  },
+  "SANTA ROSALIA DE CAMARGO (CHIHUAHUA)": {
+    "ciudad": "SANTA ROSALIA DE CAMARGO",
+    "estado": "CHIHUAHUA",
+    "lat": 27.6784285,
+    "lon": -105.1714979
+  },
+  "VALLE DE ZARAGOZA (CHIHUAHUA)": {
+    "ciudad": "VALLE DE ZARAGOZA",
+    "estado": "CHIHUAHUA",
+    "lat": 27.4502402,
+    "lon": -105.8082658
+  },
+  "SALTILLO (COAHUILA)": {
+    "ciudad": "SALTILLO",
+    "estado": "COAHUILA",
+    "lat": 25.4230425,
+    "lon": -100.9927509
+  },
+  "TORREON (COAHUILA)": {
+    "ciudad": "TORREON",
+    "estado": "COAHUILA",
+    "lat": 25.542698,
+    "lon": -103.410512
+  },
+  "COLIMA (COLIMA)": {
+    "ciudad": "COLIMA",
+    "estado": "COLIMA",
+    "lat": 19.2433991,
+    "lon": -103.7280738
+  },
+  "MANZANILLO (COLIMA)": {
+    "ciudad": "MANZANILLO",
+    "estado": "COLIMA",
+    "lat": 19.0506256,
+    "lon": -104.3159957
+  },
+  "TECOMAN (COLIMA)": {
+    "ciudad": "TECOMAN",
+    "estado": "COLIMA",
+    "lat": 18.9109158,
+    "lon": -103.873409
+  },
+  "VILLA DE ALVAREZ (COLIMA)": {
+    "ciudad": "VILLA DE ALVAREZ",
+    "estado": "COLIMA",
+    "lat": 19.2651417,
+    "lon": -103.736013
+  },
+  "CUENCAME (DURANGO)": {
+    "ciudad": "CUENCAME",
+    "estado": "DURANGO",
+    "lat": 24.8699961,
+    "lon": -103.697826
+  },
+  "DURANGO (DURANGO)": {
+    "ciudad": "DURANGO",
+    "estado": "DURANGO",
+    "lat": 24.022008,
+    "lon": -104.654741
+  },
+  "EL ORO (DURANGO)": {
+    "ciudad": "EL ORO",
+    "estado": "DURANGO",
+    "lat": 25.1180502,
+    "lon": -106.7082544
+  },
+  "CELAYA (GUANAJUATO)": {
+    "ciudad": "CELAYA",
+    "estado": "GUANAJUATO",
+    "lat": 20.521788,
+    "lon": -100.8140458
+  },
+  "IRAPUATO (GUANAJUATO)": {
+    "ciudad": "IRAPUATO",
+    "estado": "GUANAJUATO",
+    "lat": 20.6758761,
+    "lon": -101.3521052
+  },
+  "LEON (GUANAJUATO)": {
+    "ciudad": "LEON",
+    "estado": "GUANAJUATO",
+    "lat": 21.121965,
+    "lon": -101.6829766
+  },
+  "ACAPULCO DE JUAREZ (GUERRERO)": {
+    "ciudad": "ACAPULCO DE JUAREZ",
+    "estado": "GUERRERO",
+    "lat": 16.8680495,
+    "lon": -99.8940182
+  },
+  "ARCELIA (GUERRERO)": {
+    "ciudad": "ARCELIA",
+    "estado": "GUERRERO",
+    "lat": 18.3185612,
+    "lon": -100.2817918
+  },
+  "SAN MARCOS (GUERRERO)": {
+    "ciudad": "SAN MARCOS",
+    "estado": "GUERRERO",
+    "lat": 16.796111,
+    "lon": -99.384722
+  },
+  "TAXCO (GUERRERO)": {
+    "ciudad": "TAXCO",
+    "estado": "GUERRERO",
+    "lat": 18.5565446,
+    "lon": -99.6052838
+  },
+  "APAN (HIDALGO)": {
+    "ciudad": "APAN",
+    "estado": "HIDALGO",
+    "lat": 19.7098559,
+    "lon": -98.4502318
+  },
+  "PACHUCA DE SOTO (HIDALGO)": {
+    "ciudad": "PACHUCA DE SOTO",
+    "estado": "HIDALGO",
+    "lat": 20.1165413,
+    "lon": -98.7413535
+  },
+  "TEZONTEPEC (HIDALGO)": {
+    "ciudad": "TEZONTEPEC",
+    "estado": "HIDALGO",
+    "lat": 19.879722,
+    "lon": -98.819167
+  },
+  "ZAPOTLAN DE JUAREZ (HIDALGO)": {
+    "ciudad": "ZAPOTLAN DE JUAREZ",
+    "estado": "HIDALGO",
+    "lat": 19.971389,
+    "lon": -98.859722
+  },
+  "ACATLAN DE JUAREZ (JALISCO)": {
+    "ciudad": "ACATLAN DE JUAREZ",
+    "estado": "JALISCO",
+    "lat": 20.421966,
+    "lon": -103.5916753
+  },
+  "CUAUTITLAN DE GARCIA BARRAGAN (JALISCO)": {
+    "ciudad": "CUAUTITLAN DE GARCIA BARRAGAN",
+    "estado": "JALISCO",
+    "lat": 19.4521991,
+    "lon": -104.358185
+  },
+  "GUADALAJARA (JALISCO)": {
+    "ciudad": "GUADALAJARA",
+    "estado": "JALISCO",
+    "lat": 20.6720375,
+    "lon": -103.338396
+  },
+  "HUEJUQUILLA EL ALTO (JALISCO)": {
+    "ciudad": "HUEJUQUILLA EL ALTO",
+    "estado": "JALISCO",
+    "lat": 22.6273632,
+    "lon": -103.896721
+  },
+  "IXTLAHUACAN DE LOS MEMBRILLOS (JALISCO)": {
+    "ciudad": "IXTLAHUACAN DE LOS MEMBRILLOS",
+    "estado": "JALISCO",
+    "lat": 20.3489865,
+    "lon": -103.1924742
+  },
+  "JAMAY (JALISCO)": {
+    "ciudad": "JAMAY",
+    "estado": "JALISCO",
+    "lat": 20.2935132,
+    "lon": -102.7086678
+  },
+  "OCOTLAN (JALISCO)": {
+    "ciudad": "OCOTLAN",
+    "estado": "JALISCO",
+    "lat": 20.3514474,
+    "lon": -102.768809
+  },
+  "PUERTO VALLARTA (JALISCO)": {
+    "ciudad": "PUERTO VALLARTA",
+    "estado": "JALISCO",
+    "lat": 20.6407176,
+    "lon": -105.220306
+  },
+  "SAYULA (JALISCO)": {
+    "ciudad": "SAYULA",
+    "estado": "JALISCO",
+    "lat": 19.8821441,
+    "lon": -103.5988944
+  },
+  "TALA (JALISCO)": {
+    "ciudad": "TALA",
+    "estado": "JALISCO",
+    "lat": 20.6552187,
+    "lon": -103.7020971
+  },
+  "TECOLOTLAN (JALISCO)": {
+    "ciudad": "TECOLOTLAN",
+    "estado": "JALISCO",
+    "lat": 20.2026993,
+    "lon": -104.0501972
+  },
+  "TLAJOMULCO DE ZUÑIGA (JALISCO)": {
+    "ciudad": "TLAJOMULCO DE ZUÑIGA",
+    "estado": "JALISCO",
+    "lat": 20.4737273,
+    "lon": -103.4469713
+  },
+  "TLAQUEPAQUE (JALISCO)": {
+    "ciudad": "TLAQUEPAQUE",
+    "estado": "JALISCO",
+    "lat": 20.6397718,
+    "lon": -103.3120428
+  },
+  "TONALA (JALISCO)": {
+    "ciudad": "TONALA",
+    "estado": "JALISCO",
+    "lat": 20.6241367,
+    "lon": -103.2421263
+  },
+  "ZACOALCO DE TORRES (JALISCO)": {
+    "ciudad": "ZACOALCO DE TORRES",
+    "estado": "JALISCO",
+    "lat": 20.2299884,
+    "lon": -103.5716875
+  },
+  "ZAPOPAN (JALISCO)": {
+    "ciudad": "ZAPOPAN",
+    "estado": "JALISCO",
+    "lat": 20.7211203,
+    "lon": -103.3913671
+  },
+  "ZAPOTILTIC (JALISCO)": {
+    "ciudad": "ZAPOTILTIC",
+    "estado": "JALISCO",
+    "lat": 19.6260743,
+    "lon": -103.4164682
+  },
+  "APATZINGAN (MICHOACAN)": {
+    "ciudad": "APATZINGAN",
+    "estado": "MICHOACAN",
+    "lat": 19.0913792,
+    "lon": -102.3537356
+  },
+  "ECUANDUREO (MICHOACAN)": {
+    "ciudad": "ECUANDUREO",
+    "estado": "MICHOACAN",
+    "lat": 20.1634544,
+    "lon": -102.1933628
+  },
+  "HUETAMO (MICHOACAN)": {
+    "ciudad": "HUETAMO",
+    "estado": "MICHOACAN",
+    "lat": 18.625329,
+    "lon": -100.8959774
+  },
+  "MORELIA (MICHOACAN)": {
+    "ciudad": "MORELIA",
+    "estado": "MICHOACAN",
+    "lat": 19.7027116,
+    "lon": -101.1923818
+  },
+  "SAHUAYO (MICHOACAN)": {
+    "ciudad": "SAHUAYO",
+    "estado": "MICHOACAN",
+    "lat": 20.0571249,
+    "lon": -102.7223504
+  },
+  "TEPALCATEPEC (MICHOACAN)": {
+    "ciudad": "TEPALCATEPEC",
+    "estado": "MICHOACAN",
+    "lat": 19.1920558,
+    "lon": -102.8453959
+  },
+  "CUAUTLA (MORELOS)": {
+    "ciudad": "CUAUTLA",
+    "estado": "MORELOS",
+    "lat": 18.8290118,
+    "lon": -98.9432244
+  },
+  "CUERNAVACA (MORELOS)": {
+    "ciudad": "CUERNAVACA",
+    "estado": "MORELOS",
+    "lat": 18.9218274,
+    "lon": -99.2342282
+  },
+  "JIUTEPEC (MORELOS)": {
+    "ciudad": "JIUTEPEC",
+    "estado": "MORELOS",
+    "lat": 18.8817229,
+    "lon": -99.1767029
+  },
+  "TEPOZTLAN (MORELOS)": {
+    "ciudad": "TEPOZTLAN",
+    "estado": "MORELOS",
+    "lat": 18.9861456,
+    "lon": -99.0997958
+  },
+  "YAUTEPEC (MORELOS)": {
+    "ciudad": "YAUTEPEC",
+    "estado": "MORELOS",
+    "lat": 18.8858536,
+    "lon": -99.0646636
+  },
+  "TEPIC (NAYARIT)": {
+    "ciudad": "TEPIC",
+    "estado": "NAYARIT",
+    "lat": 21.5119156,
+    "lon": -104.8915889
+  },
+  "TUXPAN (NAYARIT)": {
+    "ciudad": "TUXPAN",
+    "estado": "NAYARIT",
+    "lat": 21.9406496,
+    "lon": -105.2977459
+  },
+  "ALLENDE (NUEVO LEON)": {
+    "ciudad": "ALLENDE",
+    "estado": "NUEVO LEON",
+    "lat": 25.2802597,
+    "lon": -100.0198131
+  },
+  "APODACA (NUEVO LEON)": {
+    "ciudad": "APODACA",
+    "estado": "NUEVO LEON",
+    "lat": 25.7816542,
+    "lon": -100.1887501
+  },
+  "CADEREYTA JIMENEZ (NUEVO LEON)": {
+    "ciudad": "CADEREYTA JIMENEZ",
+    "estado": "NUEVO LEON",
+    "lat": 25.5876993,
+    "lon": -100.0012458
+  },
+  "DOCTOR ARROYO (NUEVO LEON)": {
+    "ciudad": "DOCTOR ARROYO",
+    "estado": "NUEVO LEON",
+    "lat": 23.6728962,
+    "lon": -100.1794359
+  },
+  "GALEANA (NUEVO LEON)": {
+    "ciudad": "GALEANA",
+    "estado": "NUEVO LEON",
+    "lat": 24.8250572,
+    "lon": -100.076812
+  },
+  "GENERAL MARIANO ESCOBEDO (NUEVO LEON)": {
+    "ciudad": "GENERAL MARIANO ESCOBEDO",
+    "estado": "NUEVO LEON",
+    "lat": 28.3490035,
+    "lon": -110.631412
+  },
+  "GUADALUPE (NUEVO LEON)": {
+    "ciudad": "GUADALUPE",
+    "estado": "NUEVO LEON",
+    "lat": 25.6751114,
+    "lon": -100.2151753
+  },
+  "HIDALGO (NUEVO LEON)": {
+    "ciudad": "HIDALGO",
+    "estado": "NUEVO LEON",
+    "lat": 25.9743255,
+    "lon": -100.4506125
+  },
+  "LINARES (NUEVO LEON)": {
+    "ciudad": "LINARES",
+    "estado": "NUEVO LEON",
+    "lat": 24.8596282,
+    "lon": -99.5684539
+  },
+  "MONTERREY (NUEVO LEON)": {
+    "ciudad": "MONTERREY",
+    "estado": "NUEVO LEON",
+    "lat": 25.6802019,
+    "lon": -100.315258
+  },
+  "SAN NICOLAS DE LOS GARZA (NUEVO LEON)": {
+    "ciudad": "SAN NICOLAS DE LOS GARZA",
+    "estado": "NUEVO LEON",
+    "lat": 25.7558021,
+    "lon": -100.289648
+  },
+  "SAN PEDRO GARZA GARCIA (NUEVO LEON)": {
+    "ciudad": "SAN PEDRO GARZA GARCIA",
+    "estado": "NUEVO LEON",
+    "lat": 25.6651753,
+    "lon": -100.4018251
+  },
+  "SANTA CATARINA (NUEVO LEON)": {
+    "ciudad": "SANTA CATARINA",
+    "estado": "NUEVO LEON",
+    "lat": 25.6745052,
+    "lon": -100.4616371
+  },
+  "COSOLAPA (OAXACA)": {
+    "ciudad": "COSOLAPA",
+    "estado": "OAXACA",
+    "lat": 18.5990596,
+    "lon": -96.6815183
+  },
+  "LOMA BONITA (OAXACA)": {
+    "ciudad": "LOMA BONITA",
+    "estado": "OAXACA",
+    "lat": 18.1079729,
+    "lon": -95.8789955
+  },
+  "OAXACA (OAXACA)": {
+    "ciudad": "OAXACA",
+    "estado": "OAXACA",
+    "lat": 17.0604663,
+    "lon": -96.7253575
+  },
+  "PINOTEPA NACIONAL (OAXACA)": {
+    "ciudad": "PINOTEPA NACIONAL",
+    "estado": "OAXACA",
+    "lat": 16.3406076,
+    "lon": -98.0536701
+  },
+  "SALINA CRUZ (OAXACA)": {
+    "ciudad": "SALINA CRUZ",
+    "estado": "OAXACA",
+    "lat": 16.1825,
+    "lon": -95.195833
+  },
+  "SAN JUAN BAUTISTA TUXTEPEC (OAXACA)": {
+    "ciudad": "SAN JUAN BAUTISTA TUXTEPEC",
+    "estado": "OAXACA",
+    "lat": 18.0874632,
+    "lon": -96.1227767
+  },
+  "SANTA CRUZ XOXOCOTLAN (OAXACA)": {
+    "ciudad": "SANTA CRUZ XOXOCOTLAN",
+    "estado": "OAXACA",
+    "lat": 17.026389,
+    "lon": -96.733333
+  },
+  "PUEBLA (PUEBLA)": {
+    "ciudad": "PUEBLA",
+    "estado": "PUEBLA",
+    "lat": 19.0437196,
+    "lon": -98.1981486
+  },
+  "CORREGIDORA (QUERETARO)": {
+    "ciudad": "CORREGIDORA",
+    "estado": "QUERETARO",
+    "lat": 20.5399541,
+    "lon": -100.4412866
+  },
+  "QUERETARO (QUERETARO)": {
+    "ciudad": "QUERETARO",
+    "estado": "QUERETARO",
+    "lat": 20.5922997,
+    "lon": -100.3917424
+  },
+  "CANCUN (QUINTANA ROO)": {
+    "ciudad": "CANCUN",
+    "estado": "QUINTANA ROO",
+    "lat": 21.1527467,
+    "lon": -86.8425761
+  },
+  "CHETUMAL (QUINTANA ROO)": {
+    "ciudad": "CHETUMAL",
+    "estado": "QUINTANA ROO",
+    "lat": 18.5081738,
+    "lon": -88.297144
+  },
+  "COZUMEL (QUINTANA ROO)": {
+    "ciudad": "COZUMEL",
+    "estado": "QUINTANA ROO",
+    "lat": 20.4320599,
+    "lon": -86.92069058377268
+  },
+  "EBANO (SAN LUIS POTOSI)": {
+    "ciudad": "EBANO",
+    "estado": "SAN LUIS POTOSI",
+    "lat": 22.217457,
+    "lon": -98.3786093
+  },
+  "MATEHUALA (SAN LUIS POTOSI)": {
+    "ciudad": "MATEHUALA",
+    "estado": "SAN LUIS POTOSI",
+    "lat": 23.646485,
+    "lon": -100.643544
+  },
+  "MATLAPA (SAN LUIS POTOSI)": {
+    "ciudad": "MATLAPA",
+    "estado": "SAN LUIS POTOSI",
+    "lat": 21.3367783,
+    "lon": -98.8282113
+  },
+  "RIO VERDE (SAN LUIS POTOSI)": {
+    "ciudad": "RIO VERDE",
+    "estado": "SAN LUIS POTOSI",
+    "lat": 21.9318566,
+    "lon": -99.9928621
+  },
+  "SAN LUIS POTOSI (SAN LUIS POTOSI)": {
+    "ciudad": "SAN LUIS POTOSI",
+    "estado": "SAN LUIS POTOSI",
+    "lat": 22.1516472,
+    "lon": -100.9763993
+  },
+  "SOLEDAD DE GRACIANO SANCHEZ (SAN LUIS POTOSI)": {
+    "ciudad": "SOLEDAD DE GRACIANO SANCHEZ",
+    "estado": "SAN LUIS POTOSI",
+    "lat": 22.1874129,
+    "lon": -100.9368949
+  },
+  "TAMAZUNCHALE (SAN LUIS POTOSI)": {
+    "ciudad": "TAMAZUNCHALE",
+    "estado": "SAN LUIS POTOSI",
+    "lat": 21.2618403,
+    "lon": -98.7907425
+  },
+  "TAMPACAN (SAN LUIS POTOSI)": {
+    "ciudad": "TAMPACAN",
+    "estado": "SAN LUIS POTOSI",
+    "lat": 21.4028043,
+    "lon": -98.7276126
+  },
+  "TAMUIN (SAN LUIS POTOSI)": {
+    "ciudad": "TAMUIN",
+    "estado": "SAN LUIS POTOSI",
+    "lat": 22.0059317,
+    "lon": -98.7795071
+  },
+  "TANQUIAN DE ESCOBEDO (SAN LUIS POTOSI)": {
+    "ciudad": "TANQUIAN DE ESCOBEDO",
+    "estado": "SAN LUIS POTOSI",
+    "lat": 21.6048517,
+    "lon": -98.6636143
+  },
+  "VILLA DE POZOS (SAN LUIS POTOSI)": {
+    "ciudad": "VILLA DE POZOS",
+    "estado": "SAN LUIS POTOSI",
+    "lat": 22.0957107,
+    "lon": -100.8747668
+  },
+  "VILLA HIDALGO (SAN LUIS POTOSI)": {
+    "ciudad": "VILLA HIDALGO",
+    "estado": "SAN LUIS POTOSI",
+    "lat": 22.4493286,
+    "lon": -100.6788111
+  },
+  "VILLA JUAREZ (SAN LUIS POTOSI)": {
+    "ciudad": "VILLA JUAREZ",
+    "estado": "SAN LUIS POTOSI",
+    "lat": 22.324094,
+    "lon": -100.2669868
+  },
+  "XILITLA (SAN LUIS POTOSI)": {
+    "ciudad": "XILITLA",
+    "estado": "SAN LUIS POTOSI",
+    "lat": 21.3865084,
+    "lon": -98.9919608
+  },
+  "CULIACAN (SINALOA)": {
+    "ciudad": "CULIACAN",
+    "estado": "SINALOA",
+    "lat": 24.7978965,
+    "lon": -107.393395
+  },
+  "ESCUINAPA (SINALOA)": {
+    "ciudad": "ESCUINAPA",
+    "estado": "SINALOA",
+    "lat": 22.8337989,
+    "lon": -105.778322
+  },
+  "MAZATLAN (SINALOA)": {
+    "ciudad": "MAZATLAN",
+    "estado": "SINALOA",
+    "lat": 23.2035785,
+    "lon": -106.4208391
+  },
+  "NAVOLATO (SINALOA)": {
+    "ciudad": "NAVOLATO",
+    "estado": "SINALOA",
+    "lat": 24.7633,
+    "lon": -107.6979734
+  },
+  "BENJAMIN HILL (SONORA)": {
+    "ciudad": "BENJAMIN HILL",
+    "estado": "SONORA",
+    "lat": 30.1696487,
+    "lon": -111.1126343
+  },
+  "CANANEA (SONORA)": {
+    "ciudad": "CANANEA",
+    "estado": "SONORA",
+    "lat": 30.986517,
+    "lon": -110.2888925
+  },
+  "GUAYMAS (SONORA)": {
+    "ciudad": "GUAYMAS",
+    "estado": "SONORA",
+    "lat": 27.9216441,
+    "lon": -110.8994059
+  },
+  "HERMOSILLO (SONORA)": {
+    "ciudad": "HERMOSILLO",
+    "estado": "SONORA",
+    "lat": 29.0948207,
+    "lon": -110.9692202
+  },
+  "NOGALES (SONORA)": {
+    "ciudad": "NOGALES",
+    "estado": "SONORA",
+    "lat": 31.3285057,
+    "lon": -110.9450472
+  },
+  "SAN LUIS RIO COLORADO (SONORA)": {
+    "ciudad": "SAN LUIS RIO COLORADO",
+    "estado": "SONORA",
+    "lat": 32.4822164,
+    "lon": -114.7816893
+  },
+  "CARDENAS (TABASCO)": {
+    "ciudad": "CARDENAS",
+    "estado": "TABASCO",
+    "lat": 17.990878,
+    "lon": -93.3753314
+  },
+  "COMALCALCO (TABASCO)": {
+    "ciudad": "COMALCALCO",
+    "estado": "TABASCO",
+    "lat": 18.2615076,
+    "lon": -93.2231523
+  },
+  "CUNDUACAN (TABASCO)": {
+    "ciudad": "CUNDUACAN",
+    "estado": "TABASCO",
+    "lat": 18.066059,
+    "lon": -93.173675
+  },
+  "ESTACION CHONTALPA (TABASCO)": {
+    "ciudad": "ESTACION CHONTALPA",
+    "estado": "TABASCO",
+    "lat": 17.6659273,
+    "lon": -93.4810105
+  },
+  "HUIMANGUILLO (TABASCO)": {
+    "ciudad": "HUIMANGUILLO",
+    "estado": "TABASCO",
+    "lat": 17.8331648,
+    "lon": -93.3920691
+  },
+  "NACAJUCA (TABASCO)": {
+    "ciudad": "NACAJUCA",
+    "estado": "TABASCO",
+    "lat": 18.1681198,
+    "lon": -93.0190169
+  },
+  "VILLAHERMOSA (TABASCO)": {
+    "ciudad": "VILLAHERMOSA",
+    "estado": "TABASCO",
+    "lat": 18.0018152,
+    "lon": -92.9330401483751
+  },
+  "ALDAMA (TAMAULIPAS)": {
+    "ciudad": "ALDAMA",
+    "estado": "TAMAULIPAS",
+    "lat": 22.9196081,
+    "lon": -98.0741727
+  },
+  "ALTAMIRA (TAMAULIPAS)": {
+    "ciudad": "ALTAMIRA",
+    "estado": "TAMAULIPAS",
+    "lat": 22.3921625,
+    "lon": -97.9362975
+  },
+  "GONZALEZ (TAMAULIPAS)": {
+    "ciudad": "GONZALEZ",
+    "estado": "TAMAULIPAS",
+    "lat": 22.8280138,
+    "lon": -98.4307693
+  },
+  "MATAMOROS (TAMAULIPAS)": {
+    "ciudad": "MATAMOROS",
+    "estado": "TAMAULIPAS",
+    "lat": 25.8810158,
+    "lon": -97.5064866
+  },
+  "NUEVO LAREDO (TAMAULIPAS)": {
+    "ciudad": "NUEVO LAREDO",
+    "estado": "TAMAULIPAS",
+    "lat": 27.4930246,
+    "lon": -99.507425
+  },
+  "REYNOSA (TAMAULIPAS)": {
+    "ciudad": "REYNOSA",
+    "estado": "TAMAULIPAS",
+    "lat": 26.0907673,
+    "lon": -98.2788191
+  },
+  "RIO BRAVO (TAMAULIPAS)": {
+    "ciudad": "RIO BRAVO",
+    "estado": "TAMAULIPAS",
+    "lat": 25.988981,
+    "lon": -98.0945766
+  },
+  "SOTO LA MARINA (TAMAULIPAS)": {
+    "ciudad": "SOTO LA MARINA",
+    "estado": "TAMAULIPAS",
+    "lat": 23.7707247,
+    "lon": -98.2057817
+  },
+  "TAMPICO (TAMAULIPAS)": {
+    "ciudad": "TAMPICO",
+    "estado": "TAMAULIPAS",
+    "lat": 22.2157619,
+    "lon": -97.8577713
+  },
+  "APIZACO (TLAXCALA)": {
+    "ciudad": "APIZACO",
+    "estado": "TLAXCALA",
+    "lat": 19.415556,
+    "lon": -98.14
+  },
+  "TLAXCALA (TLAXCALA)": {
+    "ciudad": "TLAXCALA",
+    "estado": "TLAXCALA",
+    "lat": 19.3167101,
+    "lon": -98.2386138
+  },
+  "ACAYUCAN (VERACRUZ)": {
+    "ciudad": "ACAYUCAN",
+    "estado": "VERACRUZ",
+    "lat": 17.9487862,
+    "lon": -94.9145752
+  },
+  "AGUA DULCE (VERACRUZ)": {
+    "ciudad": "AGUA DULCE",
+    "estado": "VERACRUZ",
+    "lat": 20.3638384,
+    "lon": -97.2939733
+  },
+  "BOCA DEL RIO (VERACRUZ)": {
+    "ciudad": "BOCA DEL RIO",
+    "estado": "VERACRUZ",
+    "lat": 19.1033511,
+    "lon": -96.106086
+  },
+  "CASTILLO DE TEAYO (VERACRUZ)": {
+    "ciudad": "CASTILLO DE TEAYO",
+    "estado": "VERACRUZ",
+    "lat": 20.747219899999997,
+    "lon": -97.63311503358918
+  },
+  "COATZACOALCOS (VERACRUZ)": {
+    "ciudad": "COATZACOALCOS",
+    "estado": "VERACRUZ",
+    "lat": 18.1396787,
+    "lon": -94.4501731
+  },
+  "COMAPA (VERACRUZ)": {
+    "ciudad": "COMAPA",
+    "estado": "VERACRUZ",
+    "lat": 19.163889,
+    "lon": -96.886944
+  },
+  "CORDOBA (VERACRUZ)": {
+    "ciudad": "CORDOBA",
+    "estado": "VERACRUZ",
+    "lat": 18.8944704,
+    "lon": -96.9352891
+  },
+  "CUICHAPA (VERACRUZ)": {
+    "ciudad": "CUICHAPA",
+    "estado": "VERACRUZ",
+    "lat": 18.771667,
+    "lon": -96.869167
+  },
+  "CUITLAHUAC (VERACRUZ)": {
+    "ciudad": "CUITLAHUAC",
+    "estado": "VERACRUZ",
+    "lat": 18.814226,
+    "lon": -96.7223775
+  },
+  "EL HIGO (VERACRUZ)": {
+    "ciudad": "EL HIGO",
+    "estado": "VERACRUZ",
+    "lat": 21.7673571,
+    "lon": -98.4525793
+  },
+  "FORTIN (VERACRUZ)": {
+    "ciudad": "FORTIN",
+    "estado": "VERACRUZ",
+    "lat": 18.8993309,
+    "lon": -96.9982014
+  },
+  "HIDALGOTITLAN (VERACRUZ)": {
+    "ciudad": "HIDALGOTITLAN",
+    "estado": "VERACRUZ",
+    "lat": 17.772533,
+    "lon": -94.6464496
+  },
+  "HUATUSCO (VERACRUZ)": {
+    "ciudad": "HUATUSCO",
+    "estado": "VERACRUZ",
+    "lat": 19.148703,
+    "lon": -96.9680273
+  },
+  "ISLA (VERACRUZ)": {
+    "ciudad": "ISLA",
+    "estado": "VERACRUZ",
+    "lat": 18.0276212,
+    "lon": -95.5281332
+  },
+  "JALTIPAN (VERACRUZ)": {
+    "ciudad": "JALTIPAN",
+    "estado": "VERACRUZ",
+    "lat": 17.9646096,
+    "lon": -94.7176802
+  },
+  "JAMAPA (VERACRUZ)": {
+    "ciudad": "JAMAPA",
+    "estado": "VERACRUZ",
+    "lat": 19.0420109,
+    "lon": -96.2409728
+  },
+  "JUCHIQUE DE FERRER (VERACRUZ)": {
+    "ciudad": "JUCHIQUE DE FERRER",
+    "estado": "VERACRUZ",
+    "lat": 19.839444,
+    "lon": -96.6955464
+  },
+  "LAS VIGAS DE RAMIREZ (VERACRUZ)": {
+    "ciudad": "LAS VIGAS DE RAMIREZ",
+    "estado": "VERACRUZ",
+    "lat": 19.6366976,
+    "lon": -97.0978171
+  },
+  "MANLIO FABIO ALTAMIRANO (VERACRUZ)": {
+    "ciudad": "MANLIO FABIO ALTAMIRANO",
+    "estado": "VERACRUZ",
+    "lat": 19.0940624,
+    "lon": -96.3335118
+  },
+  "MINATITLAN (VERACRUZ)": {
+    "ciudad": "MINATITLAN",
+    "estado": "VERACRUZ",
+    "lat": 17.992773,
+    "lon": -94.5567103
+  },
+  "MISANTLA (VERACRUZ)": {
+    "ciudad": "MISANTLA",
+    "estado": "VERACRUZ",
+    "lat": 19.927222,
+    "lon": -96.854167
+  },
+  "NANCHITAL DE LAZARO CARDENAS DEL RIO (VERACRUZ)": {
+    "ciudad": "NANCHITAL DE LAZARO CARDENAS DEL RIO",
+    "estado": "VERACRUZ",
+    "lat": 18.0702678,
+    "lon": -94.4069757
+  },
+  "NAUTLA (VERACRUZ)": {
+    "ciudad": "NAUTLA",
+    "estado": "VERACRUZ",
+    "lat": 20.2083003,
+    "lon": -96.7741507
+  },
+  "OLUTA (VERACRUZ)": {
+    "ciudad": "OLUTA",
+    "estado": "VERACRUZ",
+    "lat": 17.9290604,
+    "lon": -94.8957777
+  },
+  "ORIZABA (VERACRUZ)": {
+    "ciudad": "ORIZABA",
+    "estado": "VERACRUZ",
+    "lat": 18.8497366,
+    "lon": -97.1060062
+  },
+  "OZULUAMA DE MASCAREÑAS (VERACRUZ)": {
+    "ciudad": "OZULUAMA DE MASCAREÑAS",
+    "estado": "VERACRUZ",
+    "lat": 21.661111,
+    "lon": -97.850556
+  },
+  "PUEBLO VIEJO (VERACRUZ)": {
+    "ciudad": "PUEBLO VIEJO",
+    "estado": "VERACRUZ",
+    "lat": 17.4085768,
+    "lon": -93.6820829
+  },
+  "SOLEDAD DE DOBLADO (VERACRUZ)": {
+    "ciudad": "SOLEDAD DE DOBLADO",
+    "estado": "VERACRUZ",
+    "lat": 19.0452067,
+    "lon": -96.4233756
+  },
+  "TEXISTEPEC (VERACRUZ)": {
+    "ciudad": "TEXISTEPEC",
+    "estado": "VERACRUZ",
+    "lat": 17.894167,
+    "lon": -94.816389
+  },
+  "TEZONAPA (VERACRUZ)": {
+    "ciudad": "TEZONAPA",
+    "estado": "VERACRUZ",
+    "lat": 18.6043124,
+    "lon": -96.6879023
+  },
+  "TIERRA BLANCA (VERACRUZ)": {
+    "ciudad": "TIERRA BLANCA",
+    "estado": "VERACRUZ",
+    "lat": 18.4475084,
+    "lon": -96.360979
+  },
+  "TOTUTLA (VERACRUZ)": {
+    "ciudad": "TOTUTLA",
+    "estado": "VERACRUZ",
+    "lat": 19.2107125,
+    "lon": -96.9603806
+  },
+  "URSULO GALVAN (VERACRUZ)": {
+    "ciudad": "URSULO GALVAN",
+    "estado": "VERACRUZ",
+    "lat": 20.601935,
+    "lon": -97.439369
+  },
+  "VERACRUZ (VERACRUZ)": {
+    "ciudad": "VERACRUZ",
+    "estado": "VERACRUZ",
+    "lat": 19.2003429,
+    "lon": -96.1383572
+  },
+  "XALAPA (VERACRUZ)": {
+    "ciudad": "XALAPA",
+    "estado": "VERACRUZ",
+    "lat": 19.5408338,
+    "lon": -96.9146374
+  },
+  "MERIDA (YUCATAN)": {
+    "ciudad": "MERIDA",
+    "estado": "YUCATAN",
+    "lat": 20.9670759,
+    "lon": -89.6237402
+  },
+  "FRESNILLO (ZACATECAS)": {
+    "ciudad": "FRESNILLO",
+    "estado": "ZACATECAS",
+    "lat": 23.1811278,
+    "lon": -102.8729073
+  },
+  "GENERAL FRANCISCO R. MURGUIA (ZACATECAS)": {
+    "ciudad": "GENERAL FRANCISCO R. MURGUIA",
+    "estado": "ZACATECAS",
+    "lat": 23.7980927,
+    "lon": -103.7210317
+  },
+  "JEREZ (ZACATECAS)": {
+    "ciudad": "JEREZ",
+    "estado": "ZACATECAS",
+    "lat": 22.6494432,
+    "lon": -102.9900276
+  },
+  "LORETO (ZACATECAS)": {
+    "ciudad": "LORETO",
+    "estado": "ZACATECAS",
+    "lat": 22.2705712,
+    "lon": -101.9872783
+  },
+  "MONTE ESCOBEDO (ZACATECAS)": {
+    "ciudad": "MONTE ESCOBEDO",
+    "estado": "ZACATECAS",
+    "lat": 22.3025595,
+    "lon": -103.5624987
+  },
+  "RIO GRANDE (ZACATECAS)": {
+    "ciudad": "RIO GRANDE",
+    "estado": "ZACATECAS",
+    "lat": 23.8268632,
+    "lon": -103.0338073
+  },
+  "SOMBRERETE (ZACATECAS)": {
+    "ciudad": "SOMBRERETE",
+    "estado": "ZACATECAS",
+    "lat": 23.6354312,
+    "lon": -103.6410119
+  },
+  "TLALTENANGO DE SANCHEZ ROMAN (ZACATECAS)": {
+    "ciudad": "TLALTENANGO DE SANCHEZ ROMAN",
+    "estado": "ZACATECAS",
+    "lat": 21.7826752,
+    "lon": -103.30614
+  },
+  "VILLANUEVA (ZACATECAS)": {
+    "ciudad": "VILLANUEVA",
+    "estado": "ZACATECAS",
+    "lat": 22.3543443,
+    "lon": -102.883384
+  },
+  "ZACATECAS (ZACATECAS)": {
+    "ciudad": "ZACATECAS",
+    "estado": "ZACATECAS",
+    "lat": 22.7753891,
+    "lon": -102.5722706
+  }
+}
