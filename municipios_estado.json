@@ -1,0 +1,858 @@
+[
+  {
+    "CIUDAD":"AGUASCALIENTES",
+    "ESTADO":"AGUASCALIENTES"
+  },
+  {
+    "CIUDAD":"ENSENADA",
+    "ESTADO":"BAJA CALIFORNIA"
+  },
+  {
+    "CIUDAD":"MEXICALI",
+    "ESTADO":"BAJA CALIFORNIA"
+  },
+  {
+    "CIUDAD":"PLAYAS DE ROSARITO",
+    "ESTADO":"BAJA CALIFORNIA"
+  },
+  {
+    "CIUDAD":"TECATE",
+    "ESTADO":"BAJA CALIFORNIA"
+  },
+  {
+    "CIUDAD":"TIJUANA",
+    "ESTADO":"BAJA CALIFORNIA"
+  },
+  {
+    "CIUDAD":"LA PAZ",
+    "ESTADO":"BAJA CALIFORNIA SUR"
+  },
+  {
+    "CIUDAD":"LOS CABOS",
+    "ESTADO":"BAJA CALIFORNIA SUR"
+  },
+  {
+    "CIUDAD":"CAMPECHE",
+    "ESTADO":"CAMPECHE"
+  },
+  {
+    "CIUDAD":"CD. DEL CARMEN",
+    "ESTADO":"CAMPECHE"
+  },
+  {
+    "CIUDAD":"CIUDAD DE MEXICO",
+    "ESTADO":"CIUDAD DE MEXICO"
+  },
+  {
+    "CIUDAD":"CHAMULA",
+    "ESTADO":"CHIAPAS"
+  },
+  {
+    "CIUDAD":"CHIAPA DE CORZO",
+    "ESTADO":"CHIAPAS"
+  },
+  {
+    "CIUDAD":"CINTALAPA",
+    "ESTADO":"CHIAPAS"
+  },
+  {
+    "CIUDAD":"HIDALGO",
+    "ESTADO":"CHIAPAS"
+  },
+  {
+    "CIUDAD":"HUEHUETAN",
+    "ESTADO":"CHIAPAS"
+  },
+  {
+    "CIUDAD":"HUIXTLA",
+    "ESTADO":"CHIAPAS"
+  },
+  {
+    "CIUDAD":"JIQUIPILAS",
+    "ESTADO":"CHIAPAS"
+  },
+  {
+    "CIUDAD":"MOTOZINTLA",
+    "ESTADO":"CHIAPAS"
+  },
+  {
+    "CIUDAD":"OCOZOCOAUTLA DE ESPINOSA",
+    "ESTADO":"CHIAPAS"
+  },
+  {
+    "CIUDAD":"PALENQUE",
+    "ESTADO":"CHIAPAS"
+  },
+  {
+    "CIUDAD":"PIJIJIAPAN",
+    "ESTADO":"CHIAPAS"
+  },
+  {
+    "CIUDAD":"SAN CRISTOBAL DE LAS CASAS",
+    "ESTADO":"CHIAPAS"
+  },
+  {
+    "CIUDAD":"SAN FRANCISCO PUJILTIC",
+    "ESTADO":"CHIAPAS"
+  },
+  {
+    "CIUDAD":"SUCHIATE",
+    "ESTADO":"CHIAPAS"
+  },
+  {
+    "CIUDAD":"TAPACHULA",
+    "ESTADO":"CHIAPAS"
+  },
+  {
+    "CIUDAD":"TONALA",
+    "ESTADO":"CHIAPAS"
+  },
+  {
+    "CIUDAD":"TUXTLA GUTIERREZ",
+    "ESTADO":"CHIAPAS"
+  },
+  {
+    "CIUDAD":"ALLENDE",
+    "ESTADO":"CHIHUAHUA"
+  },
+  {
+    "CIUDAD":"CAMARGO",
+    "ESTADO":"CHIHUAHUA"
+  },
+  {
+    "CIUDAD":"CD. JUAREZ",
+    "ESTADO":"CHIHUAHUA"
+  },
+  {
+    "CIUDAD":"CHIHUAHUA",
+    "ESTADO":"CHIHUAHUA"
+  },
+  {
+    "CIUDAD":"DELICIAS",
+    "ESTADO":"CHIHUAHUA"
+  },
+  {
+    "CIUDAD":"GUADALAJARA",
+    "ESTADO":"CHIHUAHUA"
+  },
+  {
+    "CIUDAD":"HIDALGO DEL PARRAL",
+    "ESTADO":"CHIHUAHUA"
+  },
+  {
+    "CIUDAD":"JIMENEZ",
+    "ESTADO":"CHIHUAHUA"
+  },
+  {
+    "CIUDAD":"JUAREZ",
+    "ESTADO":"CHIHUAHUA"
+  },
+  {
+    "CIUDAD":"MEOQUI",
+    "ESTADO":"CHIHUAHUA"
+  },
+  {
+    "CIUDAD":"OJINAGA",
+    "ESTADO":"CHIHUAHUA"
+  },
+  {
+    "CIUDAD":"SANTA BARBARA",
+    "ESTADO":"CHIHUAHUA"
+  },
+  {
+    "CIUDAD":"SANTA ROSALIA DE CAMARGO",
+    "ESTADO":"CHIHUAHUA"
+  },
+  {
+    "CIUDAD":"VALLE DE ZARAGOZA",
+    "ESTADO":"CHIHUAHUA"
+  },
+  {
+    "CIUDAD":"SALTILLO",
+    "ESTADO":"COAHUILA"
+  },
+  {
+    "CIUDAD":"TORREON",
+    "ESTADO":"COAHUILA"
+  },
+  {
+    "CIUDAD":"COLIMA",
+    "ESTADO":"COLIMA"
+  },
+  {
+    "CIUDAD":"MANZANILLO",
+    "ESTADO":"COLIMA"
+  },
+  {
+    "CIUDAD":"TECOMAN",
+    "ESTADO":"COLIMA"
+  },
+  {
+    "CIUDAD":"VILLA DE ALVAREZ",
+    "ESTADO":"COLIMA"
+  },
+  {
+    "CIUDAD":"CUENCAME",
+    "ESTADO":"DURANGO"
+  },
+  {
+    "CIUDAD":"DURANGO",
+    "ESTADO":"DURANGO"
+  },
+  {
+    "CIUDAD":"EL ORO",
+    "ESTADO":"DURANGO"
+  },
+  {
+    "CIUDAD":"CELAYA",
+    "ESTADO":"GUANAJUATO"
+  },
+  {
+    "CIUDAD":"IRAPUATO",
+    "ESTADO":"GUANAJUATO"
+  },
+  {
+    "CIUDAD":"LEON",
+    "ESTADO":"GUANAJUATO"
+  },
+  {
+    "CIUDAD":"ACAPULCO DE JUAREZ",
+    "ESTADO":"GUERRERO"
+  },
+  {
+    "CIUDAD":"ARCELIA",
+    "ESTADO":"GUERRERO"
+  },
+  {
+    "CIUDAD":"SAN MARCOS",
+    "ESTADO":"GUERRERO"
+  },
+  {
+    "CIUDAD":"TAXCO",
+    "ESTADO":"GUERRERO"
+  },
+  {
+    "CIUDAD":"APAN",
+    "ESTADO":"HIDALGO"
+  },
+  {
+    "CIUDAD":"MINERAL DE LA REFORMA",
+    "ESTADO":"HIDALGO"
+  },
+  {
+    "CIUDAD":"PACHUCA DE SOTO",
+    "ESTADO":"HIDALGO"
+  },
+  {
+    "CIUDAD":"TEZONTEPEC",
+    "ESTADO":"HIDALGO"
+  },
+  {
+    "CIUDAD":"ZAPOTLAN DE JUAREZ",
+    "ESTADO":"HIDALGO"
+  },
+  {
+    "CIUDAD":"ACATLAN DE JUAREZ",
+    "ESTADO":"JALISCO"
+  },
+  {
+    "CIUDAD":"CD. GUZMAN",
+    "ESTADO":"JALISCO"
+  },
+  {
+    "CIUDAD":"CUAUTITLAN DE GARCIA BARRAGAN",
+    "ESTADO":"JALISCO"
+  },
+  {
+    "CIUDAD":"GUADALAJARA",
+    "ESTADO":"JALISCO"
+  },
+  {
+    "CIUDAD":"HUEJUQUILLA EL ALTO",
+    "ESTADO":"JALISCO"
+  },
+  {
+    "CIUDAD":"IXTLAHUACAN DE LOS MEMBRILLOS",
+    "ESTADO":"JALISCO"
+  },
+  {
+    "CIUDAD":"JAMAY",
+    "ESTADO":"JALISCO"
+  },
+  {
+    "CIUDAD":"OCOTLAN",
+    "ESTADO":"JALISCO"
+  },
+  {
+    "CIUDAD":"PUERTO VALLARTA",
+    "ESTADO":"JALISCO"
+  },
+  {
+    "CIUDAD":"SAYULA",
+    "ESTADO":"JALISCO"
+  },
+  {
+    "CIUDAD":"TALA",
+    "ESTADO":"JALISCO"
+  },
+  {
+    "CIUDAD":"TECOLOTLAN",
+    "ESTADO":"JALISCO"
+  },
+  {
+    "CIUDAD":"TLAJOMULCO DE ZUÑIGA",
+    "ESTADO":"JALISCO"
+  },
+  {
+    "CIUDAD":"TLAQUEPAQUE",
+    "ESTADO":"JALISCO"
+  },
+  {
+    "CIUDAD":"TONALA",
+    "ESTADO":"JALISCO"
+  },
+  {
+    "CIUDAD":"ZACOALCO DE TORRES",
+    "ESTADO":"JALISCO"
+  },
+  {
+    "CIUDAD":"ZAPOPAN",
+    "ESTADO":"JALISCO"
+  },
+  {
+    "CIUDAD":"ZAPOTILTIC",
+    "ESTADO":"JALISCO"
+  },
+  {
+    "CIUDAD":"APATZINGAN",
+    "ESTADO":"MICHOACAN"
+  },
+  {
+    "CIUDAD":"ECUANDUREO",
+    "ESTADO":"MICHOACAN"
+  },
+  {
+    "CIUDAD":"HUETAMO",
+    "ESTADO":"MICHOACAN"
+  },
+  {
+    "CIUDAD":"MORELIA",
+    "ESTADO":"MICHOACAN"
+  },
+  {
+    "CIUDAD":"SAHUAYO",
+    "ESTADO":"MICHOACAN"
+  },
+  {
+    "CIUDAD":"TEPALCATEPEC",
+    "ESTADO":"MICHOACAN"
+  },
+  {
+    "CIUDAD":"TIQUICHEO DE NICOLAS ROMERO",
+    "ESTADO":"MICHOACAN"
+  },
+  {
+    "CIUDAD":"CUAUTLA",
+    "ESTADO":"MORELOS"
+  },
+  {
+    "CIUDAD":"CUERNAVACA",
+    "ESTADO":"MORELOS"
+  },
+  {
+    "CIUDAD":"JIUTEPEC",
+    "ESTADO":"MORELOS"
+  },
+  {
+    "CIUDAD":"TEPOZTLAN",
+    "ESTADO":"MORELOS"
+  },
+  {
+    "CIUDAD":"YAUTEPEC",
+    "ESTADO":"MORELOS"
+  },
+  {
+    "CIUDAD":"TEPIC",
+    "ESTADO":"NAYARIT"
+  },
+  {
+    "CIUDAD":"TUXPAN",
+    "ESTADO":"NAYARIT"
+  },
+  {
+    "CIUDAD":"ALLENDE",
+    "ESTADO":"NUEVO LEON"
+  },
+  {
+    "CIUDAD":"APODACA",
+    "ESTADO":"NUEVO LEON"
+  },
+  {
+    "CIUDAD":"CADEREYTA JIMENEZ",
+    "ESTADO":"NUEVO LEON"
+  },
+  {
+    "CIUDAD":"CD. JUAREZ",
+    "ESTADO":"NUEVO LEON"
+  },
+  {
+    "CIUDAD":"DOCTOR ARROYO",
+    "ESTADO":"NUEVO LEON"
+  },
+  {
+    "CIUDAD":"GALEANA",
+    "ESTADO":"NUEVO LEON"
+  },
+  {
+    "CIUDAD":"GENERAL MARIANO ESCOBEDO",
+    "ESTADO":"NUEVO LEON"
+  },
+  {
+    "CIUDAD":"GUADALUPE",
+    "ESTADO":"NUEVO LEON"
+  },
+  {
+    "CIUDAD":"HIDALGO",
+    "ESTADO":"NUEVO LEON"
+  },
+  {
+    "CIUDAD":"LINARES",
+    "ESTADO":"NUEVO LEON"
+  },
+  {
+    "CIUDAD":"MONTERREY",
+    "ESTADO":"NUEVO LEON"
+  },
+  {
+    "CIUDAD":"SAN NICOLAS DE LOS GARZA",
+    "ESTADO":"NUEVO LEON"
+  },
+  {
+    "CIUDAD":"SAN PEDRO GARZA GARCIA",
+    "ESTADO":"NUEVO LEON"
+  },
+  {
+    "CIUDAD":"SANTA CATARINA",
+    "ESTADO":"NUEVO LEON"
+  },
+  {
+    "CIUDAD":"COSOLAPA",
+    "ESTADO":"OAXACA"
+  },
+  {
+    "CIUDAD":"LOMA BONITA",
+    "ESTADO":"OAXACA"
+  },
+  {
+    "CIUDAD":"OAXACA",
+    "ESTADO":"OAXACA"
+  },
+  {
+    "CIUDAD":"PINOTEPA NACIONAL",
+    "ESTADO":"OAXACA"
+  },
+  {
+    "CIUDAD":"SALINA CRUZ",
+    "ESTADO":"OAXACA"
+  },
+  {
+    "CIUDAD":"SAN JUAN BAUTISTA TUXTEPEC",
+    "ESTADO":"OAXACA"
+  },
+  {
+    "CIUDAD":"SANTA CRUZ XOXOCOTLAN",
+    "ESTADO":"OAXACA"
+  },
+  {
+    "CIUDAD":"PUEBLA",
+    "ESTADO":"PUEBLA"
+  },
+  {
+    "CIUDAD":"CORREGIDORA",
+    "ESTADO":"QUERETARO"
+  },
+  {
+    "CIUDAD":"QUERETARO",
+    "ESTADO":"QUERETARO"
+  },
+  {
+    "CIUDAD":"CANCUN",
+    "ESTADO":"QUINTANA ROO"
+  },
+  {
+    "CIUDAD":"CHETUMAL",
+    "ESTADO":"QUINTANA ROO"
+  },
+  {
+    "CIUDAD":"COZUMEL",
+    "ESTADO":"QUINTANA ROO"
+  },
+  {
+    "CIUDAD":"EBANO",
+    "ESTADO":"SAN LUIS POTOSI"
+  },
+  {
+    "CIUDAD":"MATEHUALA",
+    "ESTADO":"SAN LUIS POTOSI"
+  },
+  {
+    "CIUDAD":"MATLAPA",
+    "ESTADO":"SAN LUIS POTOSI"
+  },
+  {
+    "CIUDAD":"RIO VERDE",
+    "ESTADO":"SAN LUIS POTOSI"
+  },
+  {
+    "CIUDAD":"SAN LUIS POTOSI",
+    "ESTADO":"SAN LUIS POTOSI"
+  },
+  {
+    "CIUDAD":"SOLEDAD DE GRACIANO SANCHEZ",
+    "ESTADO":"SAN LUIS POTOSI"
+  },
+  {
+    "CIUDAD":"TAMAZUNCHALE",
+    "ESTADO":"SAN LUIS POTOSI"
+  },
+  {
+    "CIUDAD":"TAMPACAN",
+    "ESTADO":"SAN LUIS POTOSI"
+  },
+  {
+    "CIUDAD":"TAMUIN",
+    "ESTADO":"SAN LUIS POTOSI"
+  },
+  {
+    "CIUDAD":"TANQUIAN DE ESCOBEDO",
+    "ESTADO":"SAN LUIS POTOSI"
+  },
+  {
+    "CIUDAD":"VILLA DE POZOS",
+    "ESTADO":"SAN LUIS POTOSI"
+  },
+  {
+    "CIUDAD":"VILLA HIDALGO",
+    "ESTADO":"SAN LUIS POTOSI"
+  },
+  {
+    "CIUDAD":"VILLA JUAREZ",
+    "ESTADO":"SAN LUIS POTOSI"
+  },
+  {
+    "CIUDAD":"XILITLA",
+    "ESTADO":"SAN LUIS POTOSI"
+  },
+  {
+    "CIUDAD":"CULIACAN",
+    "ESTADO":"SINALOA"
+  },
+  {
+    "CIUDAD":"ESCUINAPA",
+    "ESTADO":"SINALOA"
+  },
+  {
+    "CIUDAD":"MAZATLAN",
+    "ESTADO":"SINALOA"
+  },
+  {
+    "CIUDAD":"NAVOLATO",
+    "ESTADO":"SINALOA"
+  },
+  {
+    "CIUDAD":"BENJAMIN HILL",
+    "ESTADO":"SONORA"
+  },
+  {
+    "CIUDAD":"CANANEA",
+    "ESTADO":"SONORA"
+  },
+  {
+    "CIUDAD":"CD. OBREGON",
+    "ESTADO":"SONORA"
+  },
+  {
+    "CIUDAD":"GUAYMAS",
+    "ESTADO":"SONORA"
+  },
+  {
+    "CIUDAD":"HERMOSILLO",
+    "ESTADO":"SONORA"
+  },
+  {
+    "CIUDAD":"NOGALES",
+    "ESTADO":"SONORA"
+  },
+  {
+    "CIUDAD":"SAN LUIS RIO COLORADO",
+    "ESTADO":"SONORA"
+  },
+  {
+    "CIUDAD":"CARDENAS",
+    "ESTADO":"TABASCO"
+  },
+  {
+    "CIUDAD":"COMALCALCO",
+    "ESTADO":"TABASCO"
+  },
+  {
+    "CIUDAD":"CUNDUACAN",
+    "ESTADO":"TABASCO"
+  },
+  {
+    "CIUDAD":"ESTACION CHONTALPA",
+    "ESTADO":"TABASCO"
+  },
+  {
+    "CIUDAD":"HUIMANGUILLO",
+    "ESTADO":"TABASCO"
+  },
+  {
+    "CIUDAD":"NACAJUCA",
+    "ESTADO":"TABASCO"
+  },
+  {
+    "CIUDAD":"VILLAHERMOSA",
+    "ESTADO":"TABASCO"
+  },
+  {
+    "CIUDAD":"ALDAMA",
+    "ESTADO":"TAMAULIPAS"
+  },
+  {
+    "CIUDAD":"ALTAMIRA",
+    "ESTADO":"TAMAULIPAS"
+  },
+  {
+    "CIUDAD":"CD. MADERO",
+    "ESTADO":"TAMAULIPAS"
+  },
+  {
+    "CIUDAD":"CD. VICTORIA",
+    "ESTADO":"TAMAULIPAS"
+  },
+  {
+    "CIUDAD":"GONZALEZ",
+    "ESTADO":"TAMAULIPAS"
+  },
+  {
+    "CIUDAD":"MATAMOROS",
+    "ESTADO":"TAMAULIPAS"
+  },
+  {
+    "CIUDAD":"NUEVO LAREDO",
+    "ESTADO":"TAMAULIPAS"
+  },
+  {
+    "CIUDAD":"REYNOSA",
+    "ESTADO":"TAMAULIPAS"
+  },
+  {
+    "CIUDAD":"RIO BRAVO",
+    "ESTADO":"TAMAULIPAS"
+  },
+  {
+    "CIUDAD":"SOTO LA MARINA",
+    "ESTADO":"TAMAULIPAS"
+  },
+  {
+    "CIUDAD":"TAMPICO",
+    "ESTADO":"TAMAULIPAS"
+  },
+  {
+    "CIUDAD":"APIZACO",
+    "ESTADO":"TLAXCALA"
+  },
+  {
+    "CIUDAD":"TLAXCALA",
+    "ESTADO":"TLAXCALA"
+  },
+  {
+    "CIUDAD":"ACAYUCAN",
+    "ESTADO":"VERACRUZ"
+  },
+  {
+    "CIUDAD":"AGUA DULCE",
+    "ESTADO":"VERACRUZ"
+  },
+  {
+    "CIUDAD":"BOCA DEL RIO",
+    "ESTADO":"VERACRUZ"
+  },
+  {
+    "CIUDAD":"CASTILLO DE TEAYO",
+    "ESTADO":"VERACRUZ"
+  },
+  {
+    "CIUDAD":"COATZACOALCOS",
+    "ESTADO":"VERACRUZ"
+  },
+  {
+    "CIUDAD":"COMAPA",
+    "ESTADO":"VERACRUZ"
+  },
+  {
+    "CIUDAD":"CORDOBA",
+    "ESTADO":"VERACRUZ"
+  },
+  {
+    "CIUDAD":"COSAMALOAPAN DE CARPIO",
+    "ESTADO":"VERACRUZ"
+  },
+  {
+    "CIUDAD":"CUICHAPA",
+    "ESTADO":"VERACRUZ"
+  },
+  {
+    "CIUDAD":"CUITLAHUAC",
+    "ESTADO":"VERACRUZ"
+  },
+  {
+    "CIUDAD":"EL HIGO",
+    "ESTADO":"VERACRUZ"
+  },
+  {
+    "CIUDAD":"FORTIN",
+    "ESTADO":"VERACRUZ"
+  },
+  {
+    "CIUDAD":"HIDALGOTITLAN",
+    "ESTADO":"VERACRUZ"
+  },
+  {
+    "CIUDAD":"HUATUSCO",
+    "ESTADO":"VERACRUZ"
+  },
+  {
+    "CIUDAD":"ISLA",
+    "ESTADO":"VERACRUZ"
+  },
+  {
+    "CIUDAD":"JALTIPAN",
+    "ESTADO":"VERACRUZ"
+  },
+  {
+    "CIUDAD":"JAMAPA",
+    "ESTADO":"VERACRUZ"
+  },
+  {
+    "CIUDAD":"JUCHIQUE DE FERRER",
+    "ESTADO":"VERACRUZ"
+  },
+  {
+    "CIUDAD":"LAS VIGAS DE RAMIREZ",
+    "ESTADO":"VERACRUZ"
+  },
+  {
+    "CIUDAD":"MANLIO FABIO ALTAMIRANO",
+    "ESTADO":"VERACRUZ"
+  },
+  {
+    "CIUDAD":"MINATITLAN",
+    "ESTADO":"VERACRUZ"
+  },
+  {
+    "CIUDAD":"MISANTLA",
+    "ESTADO":"VERACRUZ"
+  },
+  {
+    "CIUDAD":"NANCHITAL DE LAZARO CARDENAS DEL RIO",
+    "ESTADO":"VERACRUZ"
+  },
+  {
+    "CIUDAD":"NAUTLA",
+    "ESTADO":"VERACRUZ"
+  },
+  {
+    "CIUDAD":"OLUTA",
+    "ESTADO":"VERACRUZ"
+  },
+  {
+    "CIUDAD":"ORIZABA",
+    "ESTADO":"VERACRUZ"
+  },
+  {
+    "CIUDAD":"OZULUAMA DE MASCAREÑAS",
+    "ESTADO":"VERACRUZ"
+  },
+  {
+    "CIUDAD":"PUEBLO VIEJO",
+    "ESTADO":"VERACRUZ"
+  },
+  {
+    "CIUDAD":"SOLEDAD DE DOBLADO",
+    "ESTADO":"VERACRUZ"
+  },
+  {
+    "CIUDAD":"TEXISTEPEC",
+    "ESTADO":"VERACRUZ"
+  },
+  {
+    "CIUDAD":"TEZONAPA",
+    "ESTADO":"VERACRUZ"
+  },
+  {
+    "CIUDAD":"TIERRA BLANCA",
+    "ESTADO":"VERACRUZ"
+  },
+  {
+    "CIUDAD":"TOTUTLA",
+    "ESTADO":"VERACRUZ"
+  },
+  {
+    "CIUDAD":"URSULO GALVAN",
+    "ESTADO":"VERACRUZ"
+  },
+  {
+    "CIUDAD":"VERACRUZ",
+    "ESTADO":"VERACRUZ"
+  },
+  {
+    "CIUDAD":"XALAPA",
+    "ESTADO":"VERACRUZ"
+  },
+  {
+    "CIUDAD":"MERIDA",
+    "ESTADO":"YUCATAN"
+  },
+  {
+    "CIUDAD":"FRESNILLO",
+    "ESTADO":"ZACATECAS"
+  },
+  {
+    "CIUDAD":"GENERAL FRANCISCO R. MURGUIA",
+    "ESTADO":"ZACATECAS"
+  },
+  {
+    "CIUDAD":"JEREZ",
+    "ESTADO":"ZACATECAS"
+  },
+  {
+    "CIUDAD":"LORETO",
+    "ESTADO":"ZACATECAS"
+  },
+  {
+    "CIUDAD":"MONTE ESCOBEDO",
+    "ESTADO":"ZACATECAS"
+  },
+  {
+    "CIUDAD":"RIO GRANDE",
+    "ESTADO":"ZACATECAS"
+  },
+  {
+    "CIUDAD":"SOMBRERETE",
+    "ESTADO":"ZACATECAS"
+  },
+  {
+    "CIUDAD":"TLALTENANGO DE SANCHEZ ROMAN",
+    "ESTADO":"ZACATECAS"
+  },
+  {
+    "CIUDAD":"VILLANUEVA",
+    "ESTADO":"ZACATECAS"
+  },
+  {
+    "CIUDAD":"ZACATECAS",
+    "ESTADO":"ZACATECAS"
+  }
+]
