@@ -1222,5 +1222,65 @@
     "estado": "ZACATECAS",
     "lat": 22.7753891,
     "lon": -102.5722706
+  },
+  "CD. DEL CARMEN (CAMPECHE)": {
+    "ciudad": "CD. DEL CARMEN",
+    "estado": "CAMPECHE",
+    "lat": 18.651739,
+    "lon": -91.81492
+  },
+  "CD. JUAREZ (CHIHUAHUA)": {
+    "ciudad": "CD. JUAREZ",
+    "estado": "CHIHUAHUA",
+    "lat": 31.7372575,
+    "lon": -106.485655
+  },
+  "MINERAL DE LA REFORMA (HIDALGO)": {
+    "ciudad": "MINERAL DE LA REFORMA",
+    "estado": "HIDALGO",
+    "lat": 20.2154479,
+    "lon": -98.730953
+  },
+  "CD. GUZMAN (JALISCO)": {
+    "ciudad": "CD. GUZMAN",
+    "estado": "JALISCO",
+    "lat": 19.7001632,
+    "lon": -103.463935
+  },
+  "TIQUICHEO DE NICOLAS ROMERO (MICHOACAN)": {
+    "ciudad": "TIQUICHEO DE NICOLAS ROMERO",
+    "estado": "MICHOACAN",
+    "lat": 18.9007868,
+    "lon": -100.7379575
+  },
+  "CD. JUAREZ (NUEVO LEON)": {
+    "ciudad": "CD. JUAREZ",
+    "estado": "NUEVO LEON",
+    "lat": 25.6467011,
+    "lon": -100.0907766
+  },
+  "CD. OBREGON (SONORA)": {
+    "ciudad": "CD. OBREGON",
+    "estado": "SONORA",
+    "lat": 27.4846619,
+    "lon": -109.9337782
+  },
+  "CD. MADERO (TAMAULIPAS)": {
+    "ciudad": "CD. MADERO",
+    "estado": "TAMAULIPAS",
+    "lat": 22.2474012,
+    "lon": -97.8373079
+  },
+  "CD. VICTORIA (TAMAULIPAS)": {
+    "ciudad": "CD. VICTORIA",
+    "estado": "TAMAULIPAS",
+    "lat": 23.7389846,
+    "lon": -99.1441352
+  },
+  "COSAMALOAPAN DE CARPIO (VERACRUZ)": {
+    "ciudad": "COSAMALOAPAN DE CARPIO",
+    "estado": "VERACRUZ",
+    "lat": 18.364414,
+    "lon": -95.7965793
   }
 }
