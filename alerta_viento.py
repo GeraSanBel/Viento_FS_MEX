@@ -1,8 +1,16 @@
 """
-Alerta de viento por Telegram para estados de México.
+Alerta de viento y ciclones por Telegram, por municipio, para Mexico.
 
-Fuente de datos: OpenWeatherMap (pronostico de viento)
+Fuente de datos:
+    - OpenWeatherMap: pronostico de viento (usa municipios_coords.json,
+      generado una sola vez con geocode_municipios.py)
+    - NHC/NOAA: ciclones activos en Atlantico, Pacifico y Caribe (sin API key)
+
 Envio de mensajes: Bot de Telegram (gratuito)
+
+Dos niveles de riesgo de viento:
+    - MODERADO (45-59 km/h): solo se reporta en los horarios de rutina.
+    - ALTO (60+ km/h): se avisa de inmediato, a cualquier hora.
 
 Requisitos:
     pip install requests
@@ -15,73 +23,37 @@ import requests
 
 # ============ CONFIGURA ESTO ============
 
-# Tu API key de OpenWeatherMap (openweathermap.org/api)
-# Se lee primero de variable de entorno (para GitHub Actions), si no existe usa el texto de aqui.
-OWM_API_KEY = os.environ.get("OWM_API_KEY", "837774a4942600dde476923a178e8e9cP")
-
-# El token que te dio BotFather
+OWM_API_KEY = os.environ.get("OWM_API_KEY", "837774a4942600dde476923a178e8e9c")
 TELEGRAM_TOKEN = os.environ.get("TELEGRAM_TOKEN", "8697170500:AAEtqRwbO0wxnf9FybgV1eENNFDzhTw956g")
-
-# Tu chat_id obtenido con getUpdates
 TELEGRAM_CHAT_ID = os.environ.get("TELEGRAM_CHAT_ID", "8993916335")
 
-# WhatsApp via CallMeBot (opcional, deja vacio si no lo usas)
-WHATSAPP_PHONE = os.environ.get("WHATSAPP_PHONE", "525533328765")
-WHATSAPP_APIKEY = os.environ.get("WHATSAPP_APIKEY", "3016308")
+# Umbral de riesgo MODERADO (solo aparece en reportes de rutina)
+UMBRAL_MODERADO_KMH = 45
 
-# Umbral de viento en km/h a partir del cual se considera riesgo
-UMBRAL_KMH = 45
+# Umbral de riesgo ALTO (avisa de inmediato, a cualquier hora)
+UMBRAL_ALTO_KMH = 60
 
 # Cuantas horas hacia adelante revisar en el pronostico (max 120 = 5 dias)
-HORAS_A_FUTURO = 24
+HORAS_A_FUTURO = 36
 
-# Horas del dia (en UTC) en que se manda el aviso de "sin riesgo" si no hay alertas.
-HORAS_CONFIRMACION_UTC = {6, 12, 18}
+# Horas del dia (en UTC) de los reportes de rutina.
+# Corresponden a 8:00 AM, 3:00 PM y 9:00 PM hora de Mexico (CST, UTC-6 fijo).
+HORAS_RUTINA_UTC = {14, 21, 3}
 
-# Cada cuantas horas se repite el recordatorio MIENTRAS el riesgo sigue activo
-# (para no mandar el mismo aviso cada hora si el riesgo no ha cambiado).
-HORAS_ENTRE_RECORDATORIOS = 6
+# Cada cuantas horas se repite el aviso de riesgo ALTO mientras siga activo
+HORAS_ENTRE_RECORDATORIOS = 3
 
-# Archivo donde se guarda si ya se aviso del riesgo actual (para no repetir cada hora)
+# Archivos
+ARCHIVO_MUNICIPIOS_COORDS = "municipios_coords.json"
 ARCHIVO_ESTADO = "estado_alertas.json"
 
-# Lugares a monitorear: nombre, latitud, longitud (capital de cada estado)
-UBICACIONES = [
-    {"nombre": "Aguascalientes",      "lat": 21.8853, "lon": -102.2916},
-    {"nombre": "Baja California",     "lat": 32.6245, "lon": -115.4523},
-    {"nombre": "Baja California Sur", "lat": 24.1426, "lon": -110.3128},
-    {"nombre": "Campeche",            "lat": 19.8301, "lon": -90.5349},
-    {"nombre": "Chiapas",             "lat": 16.7516, "lon": -93.1029},
-    {"nombre": "Chihuahua",           "lat": 28.6353, "lon": -106.0889},
-    {"nombre": "Ciudad de Mexico",    "lat": 19.4326, "lon": -99.1332},
-    {"nombre": "Coahuila",            "lat": 25.4260, "lon": -101.0053},
-    {"nombre": "Colima",              "lat": 19.2433, "lon": -103.7250},
-    {"nombre": "Durango",             "lat": 24.0277, "lon": -104.6532},
-    {"nombre": "Estado de Mexico",    "lat": 19.2926, "lon": -99.6568},
-    {"nombre": "Guanajuato",          "lat": 21.0190, "lon": -101.2574},
-    {"nombre": "Guerrero",            "lat": 17.5506, "lon": -99.5024},
-    {"nombre": "Hidalgo",             "lat": 20.1011, "lon": -98.7591},
-    {"nombre": "Jalisco",             "lat": 20.6597, "lon": -103.3496},
-    {"nombre": "Michoacan",           "lat": 19.7008, "lon": -101.1844},
-    {"nombre": "Morelos",             "lat": 18.9242, "lon": -99.2216},
-    {"nombre": "Nayarit",             "lat": 21.5041, "lon": -104.8942},
-    {"nombre": "Nuevo Leon",          "lat": 25.6866, "lon": -100.3161},
-    {"nombre": "Oaxaca",              "lat": 17.0732, "lon": -96.7266},
-    {"nombre": "Puebla",              "lat": 19.0414, "lon": -98.2063},
-    {"nombre": "Queretaro",           "lat": 20.5888, "lon": -100.3899},
-    {"nombre": "Quintana Roo",        "lat": 18.5036, "lon": -88.3055},
-    {"nombre": "San Luis Potosi",     "lat": 22.1565, "lon": -100.9855},
-    {"nombre": "Sinaloa",             "lat": 24.8091, "lon": -107.3940},
-    {"nombre": "Sonora",              "lat": 29.0729, "lon": -110.9559},
-    {"nombre": "Tabasco",             "lat": 17.9895, "lon": -92.9475},
-    {"nombre": "Tamaulipas",          "lat": 23.7369, "lon": -99.1411},
-    {"nombre": "Tlaxcala",            "lat": 19.3182, "lon": -98.2375},
-    {"nombre": "Veracruz",            "lat": 19.5438, "lon": -96.9102},
-    {"nombre": "Yucatan",             "lat": 20.9674, "lon": -89.5926},
-    {"nombre": "Zacatecas",           "lat": 22.7709, "lon": -102.5832},
-]
-
 # ==========================================
+
+
+def cargar_municipios():
+    """Carga la lista de municipios con sus coordenadas ya geocodificadas."""
+    with open(ARCHIVO_MUNICIPIOS_COORDS, "r", encoding="utf-8") as f:
+        return json.load(f)
 
 
 def obtener_pronostico_viento(lat, lon):
@@ -101,7 +73,7 @@ def obtener_pronostico_viento(lat, lon):
     respuesta.raise_for_status()
     datos = respuesta.json()
 
-    bloques_a_revisar = HORAS_A_FUTURO // 3  # el pronostico viene cada 3 horas
+    bloques_a_revisar = HORAS_A_FUTURO // 3
 
     peor_velocidad = 0
     peor_rafaga = 0
@@ -116,16 +88,15 @@ def obtener_pronostico_viento(lat, lon):
         if maximo_bloque > max(peor_velocidad, peor_rafaga):
             peor_velocidad = velocidad_kmh
             peor_rafaga = rafaga_kmh
-            peor_hora = bloque.get("dt_txt")  # ej: "2026-07-18 15:00:00"
+            peor_hora = bloque.get("dt_txt")
 
     return peor_velocidad, peor_rafaga, peor_hora
 
 
 def obtener_ciclones_activos():
     """
-    Consulta el feed publico del NHC (NOAA) y regresa una lista de ciclones
-    activos en el Atlantico y Pacifico Oriental, que son las cuencas que
-    pueden afectar a Mexico. No requiere API key.
+    Consulta el feed publico del NHC (NOAA): ciclones activos en Atlantico
+    (incluye Golfo de Mexico y Caribe) y Pacifico Oriental. No requiere API key.
     """
     url = "https://www.nhc.noaa.gov/CurrentStorms.json"
     try:
@@ -139,8 +110,7 @@ def obtener_ciclones_activos():
     ciclones = []
     for tormenta in datos.get("activeStorms", []):
         storm_id = tormenta.get("id", "")
-        # AL = Atlantico, EP = Pacifico Oriental, CP = Pacifico Central
-        # Solo nos interesan AL y EP para Mexico
+        # AL = Atlantico (incluye Golfo de Mexico y Caribe), EP = Pacifico Oriental
         if not (storm_id.startswith("AL") or storm_id.startswith("EP")):
             continue
 
@@ -148,16 +118,12 @@ def obtener_ciclones_activos():
             "nombre": tormenta.get("name", "Desconocido"),
             "clasificacion": tormenta.get("classification", ""),
             "intensidad_mph": tormenta.get("intensity", "N/D"),
-            "lat": tormenta.get("latitudeNumeric"),
-            "lon": tormenta.get("longitudeNumeric"),
-            "movimiento": tormenta.get("movementDir", ""),
         })
 
     return ciclones
 
 
 def formatear_ciclon(ciclon):
-    """Convierte la clasificacion tecnica del NHC a un texto legible."""
     clasificaciones = {
         "HU": "Huracan",
         "TS": "Tormenta tropical",
@@ -170,117 +136,80 @@ def formatear_ciclon(ciclon):
 
 
 def cargar_estado():
-    """Lee el estado guardado de la corrida anterior. Si no existe, regresa valores default."""
     try:
         with open(ARCHIVO_ESTADO, "r", encoding="utf-8") as f:
             return json.load(f)
     except (FileNotFoundError, json.JSONDecodeError):
-        return {"riesgo_activo": False, "ultima_notificacion": None}
+        return {"riesgo_alto_activo": False, "ultima_notificacion_alta": None}
 
 
 def guardar_estado(estado):
-    """Guarda el estado para que la siguiente corrida sepa que ya paso."""
     with open(ARCHIVO_ESTADO, "w", encoding="utf-8") as f:
         json.dump(estado, f)
 
 
 def enviar_telegram(mensaje):
-    """Envia un mensaje usando el bot de Telegram."""
-    url = f"https://api.telegram.org/bot{TELEGRAM_TOKEN}/sendMessage"
-    payload = {
-        "chat_id": TELEGRAM_CHAT_ID,
-        "text": mensaje,
-    }
-    respuesta = requests.post(url, data=payload, timeout=15)
-    return respuesta.status_code == 200
+    """Envia un mensaje usando el bot de Telegram. Si es muy largo, lo divide en partes."""
+    LIMITE = 3800  # Telegram permite 4096, dejamos margen
+    partes = [mensaje[i:i + LIMITE] for i in range(0, len(mensaje), LIMITE)] or [mensaje]
 
+    todo_ok = True
+    for parte in partes:
+        url = f"https://api.telegram.org/bot{TELEGRAM_TOKEN}/sendMessage"
+        payload = {"chat_id": TELEGRAM_CHAT_ID, "text": parte}
+        respuesta = requests.post(url, data=payload, timeout=15)
+        if respuesta.status_code != 200:
+            todo_ok = False
+            print(f"Telegram: fallo ({respuesta.status_code}) - {respuesta.text[:200]}")
 
-def enviar_whatsapp(mensaje):
-    """Envia un mensaje de WhatsApp usando CallMeBot. No hace nada si no esta configurado."""
-    if not WHATSAPP_PHONE or not WHATSAPP_APIKEY:
-        return None  # WhatsApp no configurado, se omite sin error
-
-    url = "https://api.callmebot.com/whatsapp.php"
-    params = {
-        "phone": WHATSAPP_PHONE,
-        "text": mensaje,
-        "apikey": WHATSAPP_APIKEY,
-    }
-    try:
-        respuesta = requests.get(url, params=params, timeout=15)
-        return respuesta.status_code == 200
-    except Exception as error:
-        print(f"Error enviando WhatsApp: {error}")
-        return False
-
-
-def enviar_notificacion(mensaje):
-    """Manda el mismo mensaje a Telegram y, si esta configurado, tambien a WhatsApp."""
-    ok_telegram = enviar_telegram(mensaje)
-    print("Telegram: enviado" if ok_telegram else "Telegram: fallo")
-
-    ok_whatsapp = enviar_whatsapp(mensaje)
-    if ok_whatsapp is None:
-        print("WhatsApp: no configurado, se omite")
-    else:
-        print("WhatsApp: enviado" if ok_whatsapp else "WhatsApp: fallo")
-
-    return ok_telegram
+    print("Telegram: enviado" if todo_ok else "Telegram: fallo parcial o total")
+    return todo_ok
 
 
 def revisar_y_alertar():
-    alertas_viento = []
+    municipios = cargar_municipios()
 
-    for lugar in UBICACIONES:
+    riesgo_moderado = []  # 45-59 km/h
+    riesgo_alto = []      # 60+ km/h
+
+    for clave, info in municipios.items():
         try:
-            velocidad, rafaga, hora = obtener_pronostico_viento(lugar["lat"], lugar["lon"])
+            velocidad, rafaga, hora = obtener_pronostico_viento(info["lat"], info["lon"])
         except Exception as error:
-            print(f"Error consultando {lugar['nombre']}: {error}")
+            print(f"Error consultando {clave}: {error}")
             continue
 
         maximo = max(velocidad, rafaga)
-        print(f"{lugar['nombre']}: max previsto {velocidad:.1f} km/h, rafaga {rafaga:.1f} km/h a las {hora}")
 
-        if maximo >= UMBRAL_KMH:
-            alertas_viento.append(
-                f"- {lugar['nombre']}: hasta {velocidad:.0f} km/h (rafagas {rafaga:.0f} km/h) previsto para {hora}"
+        if maximo >= UMBRAL_ALTO_KMH:
+            riesgo_alto.append(
+                f"- {info['ciudad']} ({info['estado']}): hasta {velocidad:.0f} km/h "
+                f"(rafagas {rafaga:.0f} km/h) previsto para {hora}"
             )
+        elif maximo >= UMBRAL_MODERADO_KMH:
+            riesgo_moderado.append(
+                f"- {info['ciudad']} ({info['estado']}): hasta {velocidad:.0f} km/h "
+                f"(rafagas {rafaga:.0f} km/h) previsto para {hora}"
+            )
+
+    print(f"Riesgo alto: {len(riesgo_alto)} municipios. Riesgo moderado: {len(riesgo_moderado)} municipios.")
 
     ciclones = obtener_ciclones_activos()
     for c in ciclones:
         print(f"Ciclon activo: {c['nombre']} ({c['clasificacion']}), {c['intensidad_mph']} mph")
 
-    bloques_mensaje = []
-
-    if alertas_viento:
-        bloques_mensaje.append(
-            "⚠️ VIENTO PRONOSTICADO ⚠️\n"
-            f"Se espera superar {UMBRAL_KMH} km/h en las proximas {HORAS_A_FUTURO}h en:\n"
-            + "\n".join(alertas_viento)
-        )
-
-    if ciclones:
-        lineas_ciclones = [formatear_ciclon(c) for c in ciclones]
-        bloques_mensaje.append(
-            "🌀 CICLONES ACTIVOS (Atlantico / Pacifico) 🌀\n"
-            + "\n".join(lineas_ciclones)
-            + "\nRevisa nhc.noaa.gov o conagua.gob.mx para trayectoria y avisos oficiales."
-        )
-    elif alertas_viento:
-        # Si hay alerta de viento pero no hay ciclones, igual se confirma el estado
-        bloques_mensaje.append("Sin ciclones activos en Atlantico/Pacifico por ahora.")
-
     hora_actual_utc = datetime.now(timezone.utc).hour
     ahora = datetime.now(timezone.utc)
     estado = cargar_estado()
-    hay_riesgo_ahora = bool(bloques_mensaje)
+    es_hora_de_rutina = hora_actual_utc in HORAS_RUTINA_UTC
 
-    if hay_riesgo_ahora:
-        riesgo_era_nuevo = not estado.get("riesgo_activo", False)
+    # ---- 1) RIESGO ALTO: se avisa de inmediato, a cualquier hora ----
+    if riesgo_alto or ciclones:
+        riesgo_era_nuevo = not estado.get("riesgo_alto_activo", False)
 
         horas_desde_ultima = None
-        if estado.get("ultima_notificacion"):
-            ultima = datetime.fromisoformat(estado["ultima_notificacion"])
+        if estado.get("ultima_notificacion_alta"):
+            ultima = datetime.fromisoformat(estado["ultima_notificacion_alta"])
             horas_desde_ultima = (ahora - ultima).total_seconds() / 3600
 
         toca_recordatorio = (
@@ -288,32 +217,53 @@ def revisar_y_alertar():
         )
 
         if riesgo_era_nuevo or toca_recordatorio:
-            mensaje = "\n\n".join(bloques_mensaje)
-            enviar_notificacion(mensaje)
-            estado = {"riesgo_activo": True, "ultima_notificacion": ahora.isoformat()}
+            bloques = []
+            if riesgo_alto:
+                bloques.append(
+                    "🔴 ALERTA DE RIESGO ALTO 🔴\n"
+                    f"Viento igual o mayor a {UMBRAL_ALTO_KMH} km/h en las proximas {HORAS_A_FUTURO}h:\n"
+                    + "\n".join(riesgo_alto)
+                )
+            if ciclones:
+                lineas = [formatear_ciclon(c) for c in ciclones]
+                bloques.append(
+                    "🌀 HURACAN/TORMENTA EN EL LITORAL (Golfo/Caribe/Pacifico) 🌀\n"
+                    + "\n".join(lineas)
+                    + "\nRevisa nhc.noaa.gov o conagua.gob.mx para trayectoria oficial."
+                )
+            enviar_telegram("\n\n".join(bloques))
+            estado["riesgo_alto_activo"] = True
+            estado["ultima_notificacion_alta"] = ahora.isoformat()
         else:
-            print("Riesgo sigue activo pero ya se aviso recientemente. No se repite el mensaje.")
-            estado["riesgo_activo"] = True
-
+            print("Riesgo alto sigue activo pero ya se aviso recientemente. No se repite.")
+            estado["riesgo_alto_activo"] = True
     else:
-        # No hay riesgo ahora mismo
-        riesgo_se_acaba_de_despejar = estado.get("riesgo_activo", False)
+        # Si el riesgo alto se acaba de despejar, avisar una vez
+        if estado.get("riesgo_alto_activo", False):
+            enviar_telegram("✅ El riesgo ALTO de viento/ciclones ha pasado.")
+        estado["riesgo_alto_activo"] = False
+        estado["ultima_notificacion_alta"] = ahora.isoformat()
 
-        if riesgo_se_acaba_de_despejar:
-            mensaje = "✅ El riesgo de viento/ciclones ha pasado. Condiciones normales en los 32 estados."
-            enviar_notificacion(mensaje)
-            estado = {"riesgo_activo": False, "ultima_notificacion": ahora.isoformat()}
-        elif hora_actual_utc in HORAS_CONFIRMACION_UTC:
-            mensaje = (
-                "Reporte de rutina:\n"
-                "- Sin viento fuerte pronosticado en los 32 estados.\n"
-                "- Sin ciclones activos en Atlantico/Pacifico."
+    # ---- 2) REPORTE DE RUTINA: 8am, 3pm, 9pm hora Mexico ----
+    if es_hora_de_rutina:
+        bloques = ["📋 Reporte de rutina:"]
+
+        if riesgo_moderado:
+            bloques.append(
+                "🟡 Viento moderado (45-59 km/h) previsto en:\n" + "\n".join(riesgo_moderado)
             )
-            enviar_notificacion(mensaje)
-            estado = {"riesgo_activo": False, "ultima_notificacion": ahora.isoformat()}
         else:
-            print(f"Sin riesgos y no es hora de confirmacion (hora UTC actual: {hora_actual_utc}). No se envia nada.")
-            estado["riesgo_activo"] = False
+            bloques.append("- Sin viento moderado/fuerte pronosticado (por debajo de 45 km/h).")
+
+        if not riesgo_alto:
+            bloques.append(f"- Sin viento de riesgo alto (menor a {UMBRAL_ALTO_KMH} km/h).")
+
+        if not ciclones:
+            bloques.append("- Sin huracanes/tormentas activas en el litoral (Golfo, Caribe, Pacifico).")
+
+        enviar_telegram("\n\n".join(bloques))
+    else:
+        print(f"No es hora de reporte de rutina (hora UTC actual: {hora_actual_utc}).")
 
     guardar_estado(estado)
 
