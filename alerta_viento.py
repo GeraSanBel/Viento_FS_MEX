@@ -31,7 +31,7 @@ TELEGRAM_CHAT_ID = os.environ.get("TELEGRAM_CHAT_ID", "8993916335")
 UMBRAL_MODERADO_KMH = 45
 
 # Umbral de riesgo ALTO (avisa de inmediato, a cualquier hora)
-UMBRAL_ALTO_KMH = 10
+UMBRAL_ALTO_KMH = 60
 
 # Cuantas horas hacia adelante revisar en el pronostico (max 120 = 5 dias)
 HORAS_A_FUTURO = 36
