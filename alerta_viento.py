@@ -256,7 +256,7 @@ def revisar_y_alertar():
             bloques.append("- Sin viento moderado/fuerte pronosticado (por debajo de 45 km/h).")
 
         if not riesgo_alto:
-            bloques.append(f"- Sin viento de riesgo alto (menor a {UMBRAL_ALTO_KMH} km/h).")
+            bloques.append(f"- Sin viento de riesgo alto (mayor a {UMBRAL_ALTO_KMH} km/h).")
 
         if not ciclones:
             bloques.append("- Sin huracanes/tormentas activas en el litoral (Golfo, Caribe, Pacifico).")
