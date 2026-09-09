@@ -23,8 +23,11 @@ import requests
 
 # ============ CONFIGURA ESTO ============
 
-OWM_API_KEY = os.environ.get("OWM_API_KEY", "837774a4942600dde476923a178e8e9c")
-TELEGRAM_TOKEN = os.environ.get("TELEGRAM_TOKEN", "8697170500:AAFc6vJ_VGSreH9B_FraDFrMdQjViEr21DE")
+# Nota: ya no se usa OpenWeatherMap para el pronostico (se cambio a Open-Meteo,
+# gratuito y sin necesidad de API key). Si en el futuro se vuelve a necesitar
+# geocodificar nuevos municipios, esa parte SI sigue usando OWM_API_KEY
+# (ver geocode_municipios.py).
+TELEGRAM_TOKEN = os.environ.get("TELEGRAM_TOKEN", ""8697170500:AAFc6vJ_VGSreH9B_FraDFrMdQjViEr21DE")
 TELEGRAM_CHAT_ID = os.environ.get("TELEGRAM_CHAT_ID", "8993916335")
 
 # Umbral de riesgo MODERADO (solo aparece en reportes de rutina)
@@ -58,37 +61,44 @@ def cargar_municipios():
 
 def obtener_pronostico_viento(lat, lon):
     """
-    Consulta el pronostico de OpenWeatherMap (bloques de 3 horas) y regresa
-    el punto con mayor viento dentro de las proximas HORAS_A_FUTURO,
-    junto con la fecha/hora en que se espera.
+    Consulta el pronostico de Open-Meteo (datos por hora, gratuito, sin
+    necesidad de API key) y regresa el punto con mayor viento dentro de
+    las proximas HORAS_A_FUTURO, junto con la fecha/hora en que se espera.
+
+    Open-Meteo usa modelos meteorologicos oficiales (GFS, ICON, etc.) y
+    da resolucion por hora, mas precisa que los bloques de 3h anteriores.
     """
-    url = "https://api.openweathermap.org/data/2.5/forecast"
+    url = "https://api.open-meteo.com/v1/forecast"
     params = {
-        "lat": lat,
-        "lon": lon,
-        "appid": OWM_API_KEY,
-        "units": "metric",
+        "latitude": lat,
+        "longitude": lon,
+        "hourly": "wind_speed_10m,wind_gusts_10m",
+        "wind_speed_unit": "kmh",
+        "forecast_hours": HORAS_A_FUTURO,
+        "timezone": "UTC",
     }
     respuesta = requests.get(url, params=params, timeout=15)
     respuesta.raise_for_status()
     datos = respuesta.json()
 
-    bloques_a_revisar = HORAS_A_FUTURO // 3
+    horas = datos.get("hourly", {})
+    tiempos = horas.get("time", [])
+    velocidades = horas.get("wind_speed_10m", [])
+    rafagas = horas.get("wind_gusts_10m", [])
 
     peor_velocidad = 0
     peor_rafaga = 0
     peor_hora = None
 
-    for bloque in datos.get("list", [])[:bloques_a_revisar]:
-        viento = bloque.get("wind", {})
-        velocidad_kmh = viento.get("speed", 0) * 3.6
-        rafaga_kmh = viento.get("gust", viento.get("speed", 0)) * 3.6
-        maximo_bloque = max(velocidad_kmh, rafaga_kmh)
+    for i in range(len(tiempos)):
+        velocidad_kmh = velocidades[i] if i < len(velocidades) else 0
+        rafaga_kmh = rafagas[i] if i < len(rafagas) else velocidad_kmh
+        maximo_punto = max(velocidad_kmh, rafaga_kmh)
 
-        if maximo_bloque > max(peor_velocidad, peor_rafaga):
+        if maximo_punto > max(peor_velocidad, peor_rafaga):
             peor_velocidad = velocidad_kmh
             peor_rafaga = rafaga_kmh
-            peor_hora = bloque.get("dt_txt")
+            peor_hora = tiempos[i]
 
     return peor_velocidad, peor_rafaga, peor_hora
 
@@ -140,7 +150,11 @@ def cargar_estado():
         with open(ARCHIVO_ESTADO, "r", encoding="utf-8") as f:
             return json.load(f)
     except (FileNotFoundError, json.JSONDecodeError):
-        return {"riesgo_alto_activo": False, "ultima_notificacion_alta": None}
+        return {
+            "riesgo_alto_activo": False,
+            "ultima_notificacion_alta": None,
+            "ultima_rutina_enviada": None,
+        }
 
 
 def guardar_estado(estado):
@@ -245,23 +259,29 @@ def revisar_y_alertar():
         estado["ultima_notificacion_alta"] = ahora.isoformat()
 
     # ---- 2) REPORTE DE RUTINA: 8am, 3pm, 9pm hora Mexico ----
+    clave_rutina_actual = ahora.strftime("%Y-%m-%d-%H")  # identifica esta hora exacta (unica por dia)
+
     if es_hora_de_rutina:
-        bloques = ["📋 Reporte de rutina:"]
-
-        if riesgo_moderado:
-            bloques.append(
-                "🟡 Viento moderado (45-59 km/h) previsto en:\n" + "\n".join(riesgo_moderado)
-            )
+        if estado.get("ultima_rutina_enviada") == clave_rutina_actual:
+            print(f"El reporte de rutina de esta hora ({clave_rutina_actual}) ya se envio. No se repite.")
         else:
-            bloques.append("- Sin viento moderado/fuerte pronosticado (por debajo de 45 km/h).")
+            bloques = ["📋 Reporte de rutina:"]
 
-        if not riesgo_alto:
-            bloques.append(f"- Sin viento de riesgo alto (mayor a {UMBRAL_ALTO_KMH} km/h).")
+            if riesgo_moderado:
+                bloques.append(
+                    "🟡 Viento moderado (45-59 km/h) previsto en:\n" + "\n".join(riesgo_moderado)
+                )
+            else:
+                bloques.append("- Sin viento moderado/fuerte pronosticado (por debajo de 45 km/h).")
 
-        if not ciclones:
-            bloques.append("- Sin huracanes/tormentas activas en el litoral (Golfo, Caribe, Pacifico).")
+            if not riesgo_alto:
+                bloques.append(f"- Sin viento de riesgo alto (menor a {UMBRAL_ALTO_KMH} km/h).")
 
-        enviar_telegram("\n\n".join(bloques))
+            if not ciclones:
+                bloques.append("- Sin huracanes/tormentas activas en el litoral (Golfo, Caribe, Pacifico).")
+
+            enviar_telegram("\n\n".join(bloques))
+            estado["ultima_rutina_enviada"] = clave_rutina_actual
     else:
         print(f"No es hora de reporte de rutina (hora UTC actual: {hora_actual_utc}).")
 
