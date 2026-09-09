@@ -27,7 +27,7 @@ import requests
 # gratuito y sin necesidad de API key). Si en el futuro se vuelve a necesitar
 # geocodificar nuevos municipios, esa parte SI sigue usando OWM_API_KEY
 # (ver geocode_municipios.py).
-TELEGRAM_TOKEN = os.environ.get("TELEGRAM_TOKEN", ""8697170500:AAFc6vJ_VGSreH9B_FraDFrMdQjViEr21DE")
+TELEGRAM_TOKEN = os.environ.get("TELEGRAM_TOKEN", "8697170500:AAFc6vJ_VGSreH9B_FraDFrMdQjViEr21DE")
 TELEGRAM_CHAT_ID = os.environ.get("TELEGRAM_CHAT_ID", "8993916335")
 
 # Umbral de riesgo MODERADO (solo aparece en reportes de rutina)
