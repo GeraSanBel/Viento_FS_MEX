@@ -18,6 +18,7 @@ Requisitos:
 
 import os
 import json
+import time
 from datetime import datetime, timezone
 import requests
 
@@ -57,50 +58,6 @@ def cargar_municipios():
     """Carga la lista de municipios con sus coordenadas ya geocodificadas."""
     with open(ARCHIVO_MUNICIPIOS_COORDS, "r", encoding="utf-8") as f:
         return json.load(f)
-
-
-def obtener_pronostico_viento(lat, lon):
-    """
-    Consulta el pronostico de Open-Meteo (datos por hora, gratuito, sin
-    necesidad de API key) y regresa el punto con mayor viento dentro de
-    las proximas HORAS_A_FUTURO, junto con la fecha/hora en que se espera.
-
-    Open-Meteo usa modelos meteorologicos oficiales (GFS, ICON, etc.) y
-    da resolucion por hora, mas precisa que los bloques de 3h anteriores.
-    """
-    url = "https://api.open-meteo.com/v1/forecast"
-    params = {
-        "latitude": lat,
-        "longitude": lon,
-        "hourly": "wind_speed_10m,wind_gusts_10m",
-        "wind_speed_unit": "kmh",
-        "forecast_hours": HORAS_A_FUTURO,
-        "timezone": "UTC",
-    }
-    respuesta = requests.get(url, params=params, timeout=15)
-    respuesta.raise_for_status()
-    datos = respuesta.json()
-
-    horas = datos.get("hourly", {})
-    tiempos = horas.get("time", [])
-    velocidades = horas.get("wind_speed_10m", [])
-    rafagas = horas.get("wind_gusts_10m", [])
-
-    peor_velocidad = 0
-    peor_rafaga = 0
-    peor_hora = None
-
-    for i in range(len(tiempos)):
-        velocidad_kmh = velocidades[i] if i < len(velocidades) else 0
-        rafaga_kmh = rafagas[i] if i < len(rafagas) else velocidad_kmh
-        maximo_punto = max(velocidad_kmh, rafaga_kmh)
-
-        if maximo_punto > max(peor_velocidad, peor_rafaga):
-            peor_velocidad = velocidad_kmh
-            peor_rafaga = rafaga_kmh
-            peor_hora = tiempos[i]
-
-    return peor_velocidad, peor_rafaga, peor_hora
 
 
 def obtener_ciclones_activos():
@@ -180,31 +137,108 @@ def enviar_telegram(mensaje):
     return todo_ok
 
 
+def obtener_pronostico_lote(lote):
+    """
+    Consulta el pronostico de varios municipios en UNA sola llamada a
+    Open-Meteo (soporta listas de lat/lon separadas por coma). Esto reduce
+    214 llamadas individuales a unas 11 llamadas por lotes, evitando
+    timeouts y siendo mucho mas rapido.
+
+    'lote' es una lista de tuplas (clave, info_municipio).
+    Regresa un diccionario {clave: (velocidad, rafaga, hora)}.
+    """
+    lats = ",".join(str(info["lat"]) for _, info in lote)
+    lons = ",".join(str(info["lon"]) for _, info in lote)
+
+    url = "https://api.open-meteo.com/v1/forecast"
+    params = {
+        "latitude": lats,
+        "longitude": lons,
+        "hourly": "wind_speed_10m,wind_gusts_10m",
+        "wind_speed_unit": "kmh",
+        "forecast_hours": HORAS_A_FUTURO,
+        "timezone": "UTC",
+    }
+
+    ultimo_error = None
+    for intento in range(3):  # hasta 3 intentos por lote
+        try:
+            respuesta = requests.get(url, params=params, timeout=30)
+            respuesta.raise_for_status()
+            datos = respuesta.json()
+            break
+        except Exception as error:
+            ultimo_error = error
+            print(f"  Intento {intento + 1} del lote fallo: {error}")
+            time.sleep(3)
+    else:
+        raise ultimo_error
+
+    # Si es un solo municipio, Open-Meteo regresa un dict; si son varios, una lista
+    if isinstance(datos, dict):
+        datos = [datos]
+
+    resultados = {}
+    for (clave, info), dato_municipio in zip(lote, datos):
+        horas = dato_municipio.get("hourly", {})
+        tiempos = horas.get("time", [])
+        velocidades = horas.get("wind_speed_10m", [])
+        rafagas = horas.get("wind_gusts_10m", [])
+
+        peor_velocidad = 0
+        peor_rafaga = 0
+        peor_hora = None
+
+        for i in range(len(tiempos)):
+            velocidad_kmh = velocidades[i] if i < len(velocidades) else 0
+            rafaga_kmh = rafagas[i] if i < len(rafagas) else velocidad_kmh
+            if max(velocidad_kmh, rafaga_kmh) > max(peor_velocidad, peor_rafaga):
+                peor_velocidad = velocidad_kmh
+                peor_rafaga = rafaga_kmh
+                peor_hora = tiempos[i]
+
+        resultados[clave] = (peor_velocidad, peor_rafaga, peor_hora)
+
+    return resultados
+
+
 def revisar_y_alertar():
     municipios = cargar_municipios()
+    items = list(municipios.items())
 
     riesgo_moderado = []  # 45-59 km/h
     riesgo_alto = []      # 60+ km/h
 
-    for clave, info in municipios.items():
+    TAMANO_LOTE = 20
+    lotes = [items[i:i + TAMANO_LOTE] for i in range(0, len(items), TAMANO_LOTE)]
+
+    for numero_lote, lote in enumerate(lotes, start=1):
+        print(f"Consultando lote {numero_lote}/{len(lotes)} ({len(lote)} municipios)...")
         try:
-            velocidad, rafaga, hora = obtener_pronostico_viento(info["lat"], info["lon"])
+            resultados_lote = obtener_pronostico_lote(lote)
         except Exception as error:
-            print(f"Error consultando {clave}: {error}")
+            nombres = ", ".join(clave for clave, _ in lote)
+            print(f"Error en el lote completo ({nombres}): {error}")
             continue
 
-        maximo = max(velocidad, rafaga)
+        for clave, info in lote:
+            if clave not in resultados_lote:
+                print(f"  Sin datos para {clave}")
+                continue
 
-        if maximo >= UMBRAL_ALTO_KMH:
-            riesgo_alto.append(
-                f"- {info['ciudad']} ({info['estado']}): hasta {velocidad:.0f} km/h "
-                f"(rafagas {rafaga:.0f} km/h) previsto para {hora}"
-            )
-        elif maximo >= UMBRAL_MODERADO_KMH:
-            riesgo_moderado.append(
-                f"- {info['ciudad']} ({info['estado']}): hasta {velocidad:.0f} km/h "
-                f"(rafagas {rafaga:.0f} km/h) previsto para {hora}"
-            )
+            velocidad, rafaga, hora = resultados_lote[clave]
+            maximo = max(velocidad, rafaga)
+
+            if maximo >= UMBRAL_ALTO_KMH:
+                riesgo_alto.append(
+                    f"- {info['ciudad']} ({info['estado']}): hasta {velocidad:.0f} km/h "
+                    f"(rafagas {rafaga:.0f} km/h) previsto para {hora}"
+                )
+            elif maximo >= UMBRAL_MODERADO_KMH:
+                riesgo_moderado.append(
+                    f"- {info['ciudad']} ({info['estado']}): hasta {velocidad:.0f} km/h "
+                    f"(rafagas {rafaga:.0f} km/h) previsto para {hora}"
+                )
 
     print(f"Riesgo alto: {len(riesgo_alto)} municipios. Riesgo moderado: {len(riesgo_moderado)} municipios.")
 
