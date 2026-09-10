@@ -38,7 +38,7 @@ UMBRAL_MODERADO_KMH = 45
 UMBRAL_ALTO_KMH = 60
 
 # Cuantas horas hacia adelante revisar en el pronostico (max 120 = 5 dias)
-HORAS_A_FUTURO = 36
+HORAS_A_FUTURO = 18
 
 # Horas del dia (en UTC) de los reportes de rutina.
 # Corresponden a 8:00 AM, 3:00 PM y 9:00 PM hora de Mexico (CST, UTC-6 fijo).
