@@ -28,7 +28,7 @@ import requests
 # gratuito y sin necesidad de API key). Si en el futuro se vuelve a necesitar
 # geocodificar nuevos municipios, esa parte SI sigue usando OWM_API_KEY
 # (ver geocode_municipios.py).
-TELEGRAM_TOKEN = os.environ.get("TELEGRAM_TOKEN", "8697170500:AAFc6vJ_VGSreH9B_FraDFrMdQjViEr21DE")
+TELEGRAM_TOKEN = os.environ.get("TELEGRAM_TOKEN", "8697170500:AAFc6vJ_VGSreH9B_FraDFrMdQjViEr21DE"
 TELEGRAM_CHAT_ID = os.environ.get("TELEGRAM_CHAT_ID", "8993916335")
 
 # Umbral de riesgo MODERADO (solo aparece en reportes de rutina)
@@ -38,7 +38,7 @@ UMBRAL_MODERADO_KMH = 45
 UMBRAL_ALTO_KMH = 60
 
 # Cuantas horas hacia adelante revisar en el pronostico (max 120 = 5 dias)
-HORAS_A_FUTURO = 18
+HORAS_A_FUTURO = 12
 
 # Horas del dia (en UTC) de los reportes de rutina.
 # Corresponden a 8:00 AM, 3:00 PM y 9:00 PM hora de Mexico (CST, UTC-6 fijo).
@@ -137,15 +137,14 @@ def enviar_telegram(mensaje):
     return todo_ok
 
 
-def obtener_pronostico_lote(lote):
+def obtener_pronostico_lote(lote, intentos=2, espera=2):
     """
     Consulta el pronostico de varios municipios en UNA sola llamada a
-    Open-Meteo (soporta listas de lat/lon separadas por coma). Esto reduce
-    214 llamadas individuales a unas 11 llamadas por lotes, evitando
-    timeouts y siendo mucho mas rapido.
+    Open-Meteo (soporta listas de lat/lon separadas por coma).
 
     'lote' es una lista de tuplas (clave, info_municipio).
     Regresa un diccionario {clave: (velocidad, rafaga, hora)}.
+    Lanza la ultima excepcion si todos los intentos fallan.
     """
     lats = ",".join(str(info["lat"]) for _, info in lote)
     lons = ",".join(str(info["lon"]) for _, info in lote)
@@ -161,7 +160,7 @@ def obtener_pronostico_lote(lote):
     }
 
     ultimo_error = None
-    for intento in range(3):  # hasta 3 intentos por lote
+    for intento in range(intentos):
         try:
             respuesta = requests.get(url, params=params, timeout=30)
             respuesta.raise_for_status()
@@ -169,8 +168,8 @@ def obtener_pronostico_lote(lote):
             break
         except Exception as error:
             ultimo_error = error
-            print(f"  Intento {intento + 1} del lote fallo: {error}")
-            time.sleep(3)
+            print(f"    Intento {intento + 1} del lote ({len(lote)} municipios) fallo: {error}")
+            time.sleep(espera)
     else:
         raise ultimo_error
 
@@ -200,6 +199,30 @@ def obtener_pronostico_lote(lote):
         resultados[clave] = (peor_velocidad, peor_rafaga, peor_hora)
 
     return resultados
+
+
+def procesar_lote_adaptativo(lote, profundidad=0):
+    """
+    Intenta consultar el lote completo. Si falla, en vez de perder TODOS
+    los municipios de ese lote, lo divide a la mitad y reintenta con cada
+    mitad por separado (y asi sucesivamente) hasta llegar a municipios
+    individuales si es necesario. Esto evita perder 20 municipios de golpe
+    por un solo timeout pasajero.
+    """
+    try:
+        return obtener_pronostico_lote(lote)
+    except Exception as error:
+        if len(lote) == 1:
+            clave = lote[0][0]
+            print(f"  {clave}: sin datos tras varios intentos ({error})")
+            return {}
+
+        print(f"  Lote de {len(lote)} fallo, dividiendo en dos mitades mas chicas...")
+        mitad = len(lote) // 2
+        resultados = {}
+        resultados.update(procesar_lote_adaptativo(lote[:mitad], profundidad + 1))
+        resultados.update(procesar_lote_adaptativo(lote[mitad:], profundidad + 1))
+        return resultados
 
 
 def revisar_y_alertar():
