@@ -1,12 +1,12 @@
 """
 Alerta de viento y ciclones por Telegram, por municipio, para Mexico.
 
-Fuente de datos:
-    - OpenWeatherMap: pronostico de viento (usa municipios_coords.json,
-      generado una sola vez con geocode_municipios.py)
-    - NHC/NOAA: ciclones activos en Atlantico, Pacifico y Caribe (sin API key)
+Fuentes de datos:
+    - Open-Meteo (principal): pronostico de viento por hora, gratuito, sin API key.
+    - OpenWeatherMap (respaldo): se usa solo si Open-Meteo falla para algun municipio.
+    - NHC/NOAA: ciclones activos en Atlantico, Caribe y Pacifico Oriental.
 
-Envio de mensajes: Bot de Telegram (gratuito)
+Envio de mensajes: Bot de Telegram.
 
 Dos niveles de riesgo de viento:
     - MODERADO (45-59 km/h): solo se reporta en los horarios de rutina.
@@ -22,14 +22,13 @@ import time
 from datetime import datetime, timezone
 import requests
 
-# ============ CONFIGURA ESTO ============
+# ============ CONFIGURACION ============
 
-# Nota: ya no se usa OpenWeatherMap para el pronostico (se cambio a Open-Meteo,
-# gratuito y sin necesidad de API key). Si en el futuro se vuelve a necesitar
-# geocodificar nuevos municipios, esa parte SI sigue usando OWM_API_KEY
-# (ver geocode_municipios.py).
-TELEGRAM_TOKEN = os.environ.get("TELEGRAM_TOKEN", "8697170500:AAFc6vJ_VGSreH9B_FraDFrMdQjViEr21DE")
-TELEGRAM_CHAT_ID = os.environ.get("TELEGRAM_CHAT_ID", "8993916335")
+TELEGRAM_TOKEN = os.environ.get('TELEGRAM_TOKEN', '8697170500:AAFc6vJ_VGSreH9B_FraDFrMdQjViEr21DE')
+TELEGRAM_CHAT_ID = os.environ.get('TELEGRAM_CHAT_ID', '8993916335')
+
+# API key de OpenWeatherMap, usada SOLO como respaldo si Open-Meteo falla
+OWM_API_KEY = os.environ.get('OWM_API_KEY', '')
 
 # Umbral de riesgo MODERADO (solo aparece en reportes de rutina)
 UMBRAL_MODERADO_KMH = 45
@@ -37,250 +36,311 @@ UMBRAL_MODERADO_KMH = 45
 # Umbral de riesgo ALTO (avisa de inmediato, a cualquier hora)
 UMBRAL_ALTO_KMH = 60
 
-# Cuantas horas hacia adelante revisar en el pronostico (max 120 = 5 dias)
-HORAS_A_FUTURO = 12
+# Horas hacia adelante a revisar en el pronostico
+HORAS_A_FUTURO = 18
+
+# Municipios por lote. Lotes chicos = respuestas mas ligeras = menos timeouts.
+TAMANO_LOTE = 10
+
+# Pausa en segundos entre lote y lote, para no saturar el servicio
+PAUSA_ENTRE_LOTES = 1.5
 
 # Horas del dia (en UTC) de los reportes de rutina.
-# Corresponden a 8:00 AM, 3:00 PM y 9:00 PM hora de Mexico (CST, UTC-6 fijo).
+# Corresponden a 8:00 AM, 3:00 PM y 9:00 PM hora de Mexico (CST, UTC-6).
 HORAS_RUTINA_UTC = {14, 21, 3}
 
 # Cada cuantas horas se repite el aviso de riesgo ALTO mientras siga activo
 HORAS_ENTRE_RECORDATORIOS = 3
 
 # Archivos
-ARCHIVO_MUNICIPIOS_COORDS = "municipios_coords.json"
-ARCHIVO_ESTADO = "estado_alertas.json"
+ARCHIVO_MUNICIPIOS_COORDS = 'municipios_coords.json'
+ARCHIVO_ESTADO = 'estado_alertas.json'
 
-# ==========================================
+# =======================================
 
 
 def cargar_municipios():
-    """Carga la lista de municipios con sus coordenadas ya geocodificadas."""
-    with open(ARCHIVO_MUNICIPIOS_COORDS, "r", encoding="utf-8") as f:
+    with open(ARCHIVO_MUNICIPIOS_COORDS, 'r', encoding='utf-8') as f:
         return json.load(f)
 
 
-def obtener_ciclones_activos():
+def extraer_peor_viento(dato_municipio):
+    """De la respuesta horaria de Open-Meteo, saca el peor momento de viento."""
+    horas = dato_municipio.get('hourly', {})
+    tiempos = horas.get('time', [])
+    velocidades = horas.get('wind_speed_10m', [])
+    rafagas = horas.get('wind_gusts_10m', [])
+
+    peor_velocidad = 0
+    peor_rafaga = 0
+    peor_hora = None
+
+    for i in range(len(tiempos)):
+        velocidad = velocidades[i] if i < len(velocidades) else 0
+        rafaga = rafagas[i] if i < len(rafagas) else velocidad
+        if velocidad is None:
+            velocidad = 0
+        if rafaga is None:
+            rafaga = velocidad
+
+        if max(velocidad, rafaga) > max(peor_velocidad, peor_rafaga):
+            peor_velocidad = velocidad
+            peor_rafaga = rafaga
+            peor_hora = tiempos[i]
+
+    return peor_velocidad, peor_rafaga, peor_hora
+
+
+def consultar_open_meteo(lote, intentos=2, espera=2):
     """
-    Consulta el feed publico del NHC (NOAA): ciclones activos en Atlantico
-    (incluye Golfo de Mexico y Caribe) y Pacifico Oriental. No requiere API key.
+    Consulta varios municipios en UNA sola llamada a Open-Meteo.
+    'lote' es una lista de tuplas (clave, info). Lanza excepcion si falla.
     """
-    url = "https://www.nhc.noaa.gov/CurrentStorms.json"
-    try:
-        respuesta = requests.get(url, timeout=15)
-        respuesta.raise_for_status()
-        datos = respuesta.json()
-    except Exception as error:
-        print(f"Error consultando NHC: {error}")
-        return []
+    lats = ','.join(str(info['lat']) for _, info in lote)
+    lons = ','.join(str(info['lon']) for _, info in lote)
 
-    ciclones = []
-    for tormenta in datos.get("activeStorms", []):
-        storm_id = tormenta.get("id", "")
-        # AL = Atlantico (incluye Golfo de Mexico y Caribe), EP = Pacifico Oriental
-        if not (storm_id.startswith("AL") or storm_id.startswith("EP")):
-            continue
-
-        ciclones.append({
-            "nombre": tormenta.get("name", "Desconocido"),
-            "clasificacion": tormenta.get("classification", ""),
-            "intensidad_mph": tormenta.get("intensity", "N/D"),
-        })
-
-    return ciclones
-
-
-def formatear_ciclon(ciclon):
-    clasificaciones = {
-        "HU": "Huracan",
-        "TS": "Tormenta tropical",
-        "TD": "Depresion tropical",
-        "STS": "Tormenta subtropical",
-        "STD": "Depresion subtropical",
-    }
-    tipo = clasificaciones.get(ciclon["clasificacion"], ciclon["clasificacion"] or "Sistema tropical")
-    return f"- {tipo} {ciclon['nombre']}: vientos {ciclon['intensidad_mph']} mph"
-
-
-def cargar_estado():
-    try:
-        with open(ARCHIVO_ESTADO, "r", encoding="utf-8") as f:
-            return json.load(f)
-    except (FileNotFoundError, json.JSONDecodeError):
-        return {
-            "riesgo_alto_activo": False,
-            "ultima_notificacion_alta": None,
-            "ultima_rutina_enviada": None,
-        }
-
-
-def guardar_estado(estado):
-    with open(ARCHIVO_ESTADO, "w", encoding="utf-8") as f:
-        json.dump(estado, f)
-
-
-def enviar_telegram(mensaje):
-    """Envia un mensaje usando el bot de Telegram. Si es muy largo, lo divide en partes."""
-    LIMITE = 3800  # Telegram permite 4096, dejamos margen
-    partes = [mensaje[i:i + LIMITE] for i in range(0, len(mensaje), LIMITE)] or [mensaje]
-
-    todo_ok = True
-    for parte in partes:
-        url = f"https://api.telegram.org/bot{TELEGRAM_TOKEN}/sendMessage"
-        payload = {"chat_id": TELEGRAM_CHAT_ID, "text": parte}
-        respuesta = requests.post(url, data=payload, timeout=15)
-        if respuesta.status_code != 200:
-            todo_ok = False
-            print(f"Telegram: fallo ({respuesta.status_code}) - {respuesta.text[:200]}")
-
-    print("Telegram: enviado" if todo_ok else "Telegram: fallo parcial o total")
-    return todo_ok
-
-
-def obtener_pronostico_lote(lote, intentos=2, espera=2):
-    """
-    Consulta el pronostico de varios municipios en UNA sola llamada a
-    Open-Meteo (soporta listas de lat/lon separadas por coma).
-
-    'lote' es una lista de tuplas (clave, info_municipio).
-    Regresa un diccionario {clave: (velocidad, rafaga, hora)}.
-    Lanza la ultima excepcion si todos los intentos fallan.
-    """
-    lats = ",".join(str(info["lat"]) for _, info in lote)
-    lons = ",".join(str(info["lon"]) for _, info in lote)
-
-    url = "https://api.open-meteo.com/v1/forecast"
+    url = 'https://api.open-meteo.com/v1/forecast'
     params = {
-        "latitude": lats,
-        "longitude": lons,
-        "hourly": "wind_speed_10m,wind_gusts_10m",
-        "wind_speed_unit": "kmh",
-        "forecast_hours": HORAS_A_FUTURO,
-        "timezone": "UTC",
+        'latitude': lats,
+        'longitude': lons,
+        'hourly': 'wind_speed_10m,wind_gusts_10m',
+        'wind_speed_unit': 'kmh',
+        'forecast_hours': HORAS_A_FUTURO,
+        'timezone': 'UTC',
     }
 
     ultimo_error = None
     for intento in range(intentos):
         try:
-            respuesta = requests.get(url, params=params, timeout=30)
+            respuesta = requests.get(url, params=params, timeout=45)
             respuesta.raise_for_status()
             datos = respuesta.json()
             break
         except Exception as error:
             ultimo_error = error
-            print(f"    Intento {intento + 1} del lote ({len(lote)} municipios) fallo: {error}")
+            print(f'    Intento {intento + 1} ({len(lote)} municipios) fallo: {error}')
             time.sleep(espera)
     else:
         raise ultimo_error
 
-    # Si es un solo municipio, Open-Meteo regresa un dict; si son varios, una lista
     if isinstance(datos, dict):
         datos = [datos]
 
     resultados = {}
-    for (clave, info), dato_municipio in zip(lote, datos):
-        horas = dato_municipio.get("hourly", {})
-        tiempos = horas.get("time", [])
-        velocidades = horas.get("wind_speed_10m", [])
-        rafagas = horas.get("wind_gusts_10m", [])
-
-        peor_velocidad = 0
-        peor_rafaga = 0
-        peor_hora = None
-
-        for i in range(len(tiempos)):
-            velocidad_kmh = velocidades[i] if i < len(velocidades) else 0
-            rafaga_kmh = rafagas[i] if i < len(rafagas) else velocidad_kmh
-            if max(velocidad_kmh, rafaga_kmh) > max(peor_velocidad, peor_rafaga):
-                peor_velocidad = velocidad_kmh
-                peor_rafaga = rafaga_kmh
-                peor_hora = tiempos[i]
-
-        resultados[clave] = (peor_velocidad, peor_rafaga, peor_hora)
+    for (clave, _info), dato_municipio in zip(lote, datos):
+        resultados[clave] = extraer_peor_viento(dato_municipio)
 
     return resultados
 
 
-def procesar_lote_adaptativo(lote, profundidad=0):
+def consultar_openweather_respaldo(clave, info):
     """
-    Intenta consultar el lote completo. Si falla, en vez de perder TODOS
-    los municipios de ese lote, lo divide a la mitad y reintenta con cada
-    mitad por separado (y asi sucesivamente) hasta llegar a municipios
-    individuales si es necesario. Esto evita perder 20 municipios de golpe
-    por un solo timeout pasajero.
+    Respaldo individual con OpenWeatherMap si Open-Meteo no pudo dar datos.
+    Regresa (velocidad, rafaga, hora) o None si tampoco se pudo.
+    """
+    if not OWM_API_KEY:
+        return None
+
+    url = 'https://api.openweathermap.org/data/2.5/forecast'
+    params = {
+        'lat': info['lat'],
+        'lon': info['lon'],
+        'appid': OWM_API_KEY,
+        'units': 'metric',
+    }
+    try:
+        respuesta = requests.get(url, params=params, timeout=20)
+        respuesta.raise_for_status()
+        datos = respuesta.json()
+    except Exception as error:
+        print(f'    Respaldo OWM tambien fallo para {clave}: {error}')
+        return None
+
+    bloques = max(1, HORAS_A_FUTURO // 3)
+    peor_velocidad = 0
+    peor_rafaga = 0
+    peor_hora = None
+
+    for bloque in datos.get('list', [])[:bloques]:
+        viento = bloque.get('wind', {})
+        velocidad = viento.get('speed', 0) * 3.6
+        rafaga = viento.get('gust', viento.get('speed', 0)) * 3.6
+        if max(velocidad, rafaga) > max(peor_velocidad, peor_rafaga):
+            peor_velocidad = velocidad
+            peor_rafaga = rafaga
+            peor_hora = bloque.get('dt_txt')
+
+    return peor_velocidad, peor_rafaga, peor_hora
+
+
+def procesar_lote_adaptativo(lote):
+    """
+    Intenta el lote completo. Si falla, lo parte a la mitad y reintenta cada
+    mitad por separado, y asi sucesivamente hasta municipios individuales.
+    Si un municipio individual sigue fallando, intenta el respaldo con
+    OpenWeatherMap. Solo si ambos fallan queda registrado como sin datos.
     """
     try:
-        return obtener_pronostico_lote(lote)
-    except Exception as error:
+        return consultar_open_meteo(lote)
+    except Exception:
         if len(lote) == 1:
-            clave = lote[0][0]
-            print(f"  {clave}: sin datos tras varios intentos ({error})")
+            clave, info = lote[0]
+            print(f'  {clave}: Open-Meteo fallo, probando respaldo OpenWeatherMap...')
+            respaldo = consultar_openweather_respaldo(clave, info)
+            if respaldo is not None:
+                print(f'  {clave}: recuperado con respaldo OWM')
+                return {clave: respaldo}
             return {}
 
-        print(f"  Lote de {len(lote)} fallo, dividiendo en dos mitades mas chicas...")
+        print(f'  Lote de {len(lote)} fallo, dividiendo en mitades mas chicas...')
         mitad = len(lote) // 2
         resultados = {}
-        resultados.update(procesar_lote_adaptativo(lote[:mitad], profundidad + 1))
-        resultados.update(procesar_lote_adaptativo(lote[mitad:], profundidad + 1))
+        resultados.update(procesar_lote_adaptativo(lote[:mitad]))
+        time.sleep(1)
+        resultados.update(procesar_lote_adaptativo(lote[mitad:]))
         return resultados
+
+
+def obtener_ciclones_activos():
+    """Ciclones activos en Atlantico (Golfo y Caribe) y Pacifico Oriental."""
+    url = 'https://www.nhc.noaa.gov/CurrentStorms.json'
+    try:
+        respuesta = requests.get(url, timeout=20)
+        respuesta.raise_for_status()
+        datos = respuesta.json()
+    except Exception as error:
+        print(f'Error consultando NHC: {error}')
+        return []
+
+    ciclones = []
+    for tormenta in datos.get('activeStorms', []):
+        storm_id = tormenta.get('id', '')
+        if not (storm_id.startswith('AL') or storm_id.startswith('EP')):
+            continue
+        ciclones.append({
+            'nombre': tormenta.get('name', 'Desconocido'),
+            'clasificacion': tormenta.get('classification', ''),
+            'intensidad_mph': tormenta.get('intensity', 'N/D'),
+        })
+    return ciclones
+
+
+def formatear_ciclon(ciclon):
+    clasificaciones = {
+        'HU': 'Huracan',
+        'TS': 'Tormenta tropical',
+        'TD': 'Depresion tropical',
+        'STS': 'Tormenta subtropical',
+        'STD': 'Depresion subtropical',
+    }
+    tipo = clasificaciones.get(ciclon['clasificacion'], ciclon['clasificacion'] or 'Sistema tropical')
+    return f"- {tipo} {ciclon['nombre']}: vientos {ciclon['intensidad_mph']} mph"
+
+
+def cargar_estado():
+    try:
+        with open(ARCHIVO_ESTADO, 'r', encoding='utf-8') as f:
+            return json.load(f)
+    except (FileNotFoundError, json.JSONDecodeError):
+        return {
+            'riesgo_alto_activo': False,
+            'ultima_notificacion_alta': None,
+            'ultima_rutina_enviada': None,
+        }
+
+
+def guardar_estado(estado):
+    with open(ARCHIVO_ESTADO, 'w', encoding='utf-8') as f:
+        json.dump(estado, f)
+
+
+def enviar_telegram(mensaje):
+    """Envia mensaje a Telegram, dividiendolo si excede el limite de longitud."""
+    LIMITE = 3800
+    partes = [mensaje[i:i + LIMITE] for i in range(0, len(mensaje), LIMITE)] or [mensaje]
+
+    todo_ok = True
+    for parte in partes:
+        url = f'https://api.telegram.org/bot{TELEGRAM_TOKEN}/sendMessage'
+        payload = {'chat_id': TELEGRAM_CHAT_ID, 'text': parte}
+        try:
+            respuesta = requests.post(url, data=payload, timeout=20)
+            if respuesta.status_code != 200:
+                todo_ok = False
+                print(f'Telegram: fallo ({respuesta.status_code}) - {respuesta.text[:200]}')
+        except Exception as error:
+            todo_ok = False
+            print(f'Telegram: error de conexion - {error}')
+
+    print('Telegram: enviado' if todo_ok else 'Telegram: fallo parcial o total')
+    return todo_ok
 
 
 def revisar_y_alertar():
     municipios = cargar_municipios()
     items = list(municipios.items())
 
-    riesgo_moderado = []  # 45-59 km/h
-    riesgo_alto = []      # 60+ km/h
+    riesgo_moderado = []
+    riesgo_alto = []
+    sin_datos = []
 
-    TAMANO_LOTE = 20
     lotes = [items[i:i + TAMANO_LOTE] for i in range(0, len(items), TAMANO_LOTE)]
 
     for numero_lote, lote in enumerate(lotes, start=1):
-        print(f"Consultando lote {numero_lote}/{len(lotes)} ({len(lote)} municipios)...")
-        try:
-            resultados_lote = obtener_pronostico_lote(lote)
-        except Exception as error:
-            nombres = ", ".join(clave for clave, _ in lote)
-            print(f"Error en el lote completo ({nombres}): {error}")
-            continue
+        print(f'Consultando lote {numero_lote}/{len(lotes)} ({len(lote)} municipios)...')
+        resultados_lote = procesar_lote_adaptativo(lote)
 
         for clave, info in lote:
             if clave not in resultados_lote:
-                print(f"  Sin datos para {clave}")
+                sin_datos.append(f"{info['ciudad']} ({info['estado']})")
                 continue
 
             velocidad, rafaga, hora = resultados_lote[clave]
             maximo = max(velocidad, rafaga)
 
-            if maximo >= UMBRAL_ALTO_KMH:
-                riesgo_alto.append(
-                    f"- {info['ciudad']} ({info['estado']}): hasta {velocidad:.0f} km/h "
-                    f"(rafagas {rafaga:.0f} km/h) previsto para {hora}"
-                )
-            elif maximo >= UMBRAL_MODERADO_KMH:
-                riesgo_moderado.append(
-                    f"- {info['ciudad']} ({info['estado']}): hasta {velocidad:.0f} km/h "
-                    f"(rafagas {rafaga:.0f} km/h) previsto para {hora}"
-                )
+            linea = (
+                f"- {info['ciudad']} ({info['estado']}): hasta {velocidad:.0f} km/h "
+                f"(rafagas {rafaga:.0f} km/h) previsto para {hora}"
+            )
 
-    print(f"Riesgo alto: {len(riesgo_alto)} municipios. Riesgo moderado: {len(riesgo_moderado)} municipios.")
+            if maximo >= UMBRAL_ALTO_KMH:
+                riesgo_alto.append(linea)
+            elif maximo >= UMBRAL_MODERADO_KMH:
+                riesgo_moderado.append(linea)
+
+        time.sleep(PAUSA_ENTRE_LOTES)
+
+    revisados = len(items) - len(sin_datos)
+    print(f'Municipios revisados: {revisados}/{len(items)}. Sin datos: {len(sin_datos)}')
+    print(f'Riesgo alto: {len(riesgo_alto)}. Riesgo moderado: {len(riesgo_moderado)}')
 
     ciclones = obtener_ciclones_activos()
     for c in ciclones:
         print(f"Ciclon activo: {c['nombre']} ({c['clasificacion']}), {c['intensidad_mph']} mph")
 
-    hora_actual_utc = datetime.now(timezone.utc).hour
     ahora = datetime.now(timezone.utc)
+    hora_actual_utc = ahora.hour
     estado = cargar_estado()
     es_hora_de_rutina = hora_actual_utc in HORAS_RUTINA_UTC
 
-    # ---- 1) RIESGO ALTO: se avisa de inmediato, a cualquier hora ----
+    # Aviso de cobertura, solo si hubo municipios sin revisar
+    aviso_cobertura = ''
+    if sin_datos:
+        listado = ', '.join(sin_datos[:15])
+        extra = f' y {len(sin_datos) - 15} mas' if len(sin_datos) > 15 else ''
+        aviso_cobertura = (
+            f"\n\n⚠️ Aviso: no se pudo obtener pronostico de {len(sin_datos)} "
+            f"de {len(items)} municipios ({listado}{extra}). "
+            f"Esta informacion esta incompleta."
+        )
+
+    # ---- 1) RIESGO ALTO: avisa de inmediato, a cualquier hora ----
     if riesgo_alto or ciclones:
-        riesgo_era_nuevo = not estado.get("riesgo_alto_activo", False)
+        riesgo_era_nuevo = not estado.get('riesgo_alto_activo', False)
 
         horas_desde_ultima = None
-        if estado.get("ultima_notificacion_alta"):
-            ultima = datetime.fromisoformat(estado["ultima_notificacion_alta"])
+        if estado.get('ultima_notificacion_alta'):
+            ultima = datetime.fromisoformat(estado['ultima_notificacion_alta'])
             horas_desde_ultima = (ahora - ultima).total_seconds() / 3600
 
         toca_recordatorio = (
@@ -291,59 +351,58 @@ def revisar_y_alertar():
             bloques = []
             if riesgo_alto:
                 bloques.append(
-                    "🔴 ALERTA DE RIESGO ALTO 🔴\n"
-                    f"Viento igual o mayor a {UMBRAL_ALTO_KMH} km/h en las proximas {HORAS_A_FUTURO}h:\n"
-                    + "\n".join(riesgo_alto)
+                    '🔴 ALERTA DE RIESGO ALTO 🔴\n'
+                    f'Viento igual o mayor a {UMBRAL_ALTO_KMH} km/h en las proximas {HORAS_A_FUTURO}h:\n'
+                    + '\n'.join(riesgo_alto)
                 )
             if ciclones:
                 lineas = [formatear_ciclon(c) for c in ciclones]
                 bloques.append(
-                    "🌀 HURACAN/TORMENTA EN EL LITORAL (Golfo/Caribe/Pacifico) 🌀\n"
-                    + "\n".join(lineas)
-                    + "\nRevisa nhc.noaa.gov o conagua.gob.mx para trayectoria oficial."
+                    '🌀 HURACAN/TORMENTA EN EL LITORAL (Golfo/Caribe/Pacifico) 🌀\n'
+                    + '\n'.join(lineas)
+                    + '\nRevisa nhc.noaa.gov o conagua.gob.mx para trayectoria oficial.'
                 )
-            enviar_telegram("\n\n".join(bloques))
-            estado["riesgo_alto_activo"] = True
-            estado["ultima_notificacion_alta"] = ahora.isoformat()
+            enviar_telegram('\n\n'.join(bloques) + aviso_cobertura)
+            estado['riesgo_alto_activo'] = True
+            estado['ultima_notificacion_alta'] = ahora.isoformat()
         else:
-            print("Riesgo alto sigue activo pero ya se aviso recientemente. No se repite.")
-            estado["riesgo_alto_activo"] = True
+            print('Riesgo alto sigue activo pero ya se aviso recientemente. No se repite.')
+            estado['riesgo_alto_activo'] = True
     else:
-        # Si el riesgo alto se acaba de despejar, avisar una vez
-        if estado.get("riesgo_alto_activo", False):
-            enviar_telegram("✅ El riesgo ALTO de viento/ciclones ha pasado.")
-        estado["riesgo_alto_activo"] = False
-        estado["ultima_notificacion_alta"] = ahora.isoformat()
+        if estado.get('riesgo_alto_activo', False):
+            enviar_telegram('✅ El riesgo ALTO de viento/ciclones ha pasado.')
+        estado['riesgo_alto_activo'] = False
+        estado['ultima_notificacion_alta'] = ahora.isoformat()
 
     # ---- 2) REPORTE DE RUTINA: 8am, 3pm, 9pm hora Mexico ----
-    clave_rutina_actual = ahora.strftime("%Y-%m-%d-%H")  # identifica esta hora exacta (unica por dia)
+    clave_rutina_actual = ahora.strftime('%Y-%m-%d-%H')
 
     if es_hora_de_rutina:
-        if estado.get("ultima_rutina_enviada") == clave_rutina_actual:
-            print(f"El reporte de rutina de esta hora ({clave_rutina_actual}) ya se envio. No se repite.")
+        if estado.get('ultima_rutina_enviada') == clave_rutina_actual:
+            print(f'El reporte de rutina de esta hora ({clave_rutina_actual}) ya se envio. No se repite.')
         else:
-            bloques = ["📋 Reporte de rutina:"]
+            bloques = [f'📋 Reporte de rutina ({revisados}/{len(items)} municipios revisados):']
 
             if riesgo_moderado:
                 bloques.append(
-                    "🟡 Viento moderado (45-59 km/h) previsto en:\n" + "\n".join(riesgo_moderado)
+                    '🟡 Viento moderado (45-59 km/h) previsto en:\n' + '\n'.join(riesgo_moderado)
                 )
             else:
-                bloques.append("- Sin viento moderado/fuerte pronosticado (por debajo de 45 km/h).")
+                bloques.append('- Sin viento moderado/fuerte pronosticado (por debajo de 45 km/h).')
 
             if not riesgo_alto:
-                bloques.append(f"- Sin viento de riesgo alto (menor a {UMBRAL_ALTO_KMH} km/h).")
+                bloques.append(f'- Sin viento de riesgo alto (menor a {UMBRAL_ALTO_KMH} km/h).')
 
             if not ciclones:
-                bloques.append("- Sin huracanes/tormentas activas en el litoral (Golfo, Caribe, Pacifico).")
+                bloques.append('- Sin huracanes/tormentas activas en el litoral (Golfo, Caribe, Pacifico).')
 
-            enviar_telegram("\n\n".join(bloques))
-            estado["ultima_rutina_enviada"] = clave_rutina_actual
+            enviar_telegram('\n\n'.join(bloques) + aviso_cobertura)
+            estado['ultima_rutina_enviada'] = clave_rutina_actual
     else:
-        print(f"No es hora de reporte de rutina (hora UTC actual: {hora_actual_utc}).")
+        print(f'No es hora de reporte de rutina (hora UTC actual: {hora_actual_utc}).')
 
     guardar_estado(estado)
 
 
-if __name__ == "__main__":
+if __name__ == '__main__':
     revisar_y_alertar()
