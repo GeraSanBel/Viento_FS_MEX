@@ -91,7 +91,7 @@ def extraer_peor_viento(dato_municipio):
     return peor_velocidad, peor_rafaga, peor_hora
 
 
-def consultar_open_meteo(lote, intentos=2, espera=2):
+def consultar_open_meteo(lote, intentos=1, espera=1):
     """
     Consulta varios municipios en UNA sola llamada a Open-Meteo.
     'lote' es una lista de tuplas (clave, info). Lanza excepcion si falla.
@@ -112,7 +112,7 @@ def consultar_open_meteo(lote, intentos=2, espera=2):
     ultimo_error = None
     for intento in range(intentos):
         try:
-            respuesta = requests.get(url, params=params, timeout=45)
+            respuesta = requests.get(url, params=params, timeout=20)
             respuesta.raise_for_status()
             datos = respuesta.json()
             break
@@ -214,7 +214,7 @@ def obtener_ciclones_activos():
 
     ciclones = []
     for tormenta in datos.get('activeStorms', []):
-        storm_id = tormenta.get('id', '')
+        storm_id = tormenta.get('id', '').upper()
         if not (storm_id.startswith('AL') or storm_id.startswith('EP')):
             continue
         ciclones.append({
