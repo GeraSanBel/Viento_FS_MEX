@@ -28,7 +28,7 @@ TELEGRAM_TOKEN = os.environ.get('TELEGRAM_TOKEN', '8697170500:AAFc6vJ_VGSreH9B_F
 TELEGRAM_CHAT_ID = os.environ.get('TELEGRAM_CHAT_ID', '8993916335')
 
 # API key de OpenWeatherMap, usada SOLO como respaldo si Open-Meteo falla
-OWM_API_KEY = os.environ.get('OWM_API_KEY', '')
+OWM_API_KEY = os.environ.get('OWM_API_KEY', '837774a4942600dde476923a178e8e9c')
 
 # Umbral de riesgo MODERADO (solo aparece en reportes de rutina)
 UMBRAL_MODERADO_KMH = 45
@@ -201,7 +201,72 @@ def procesar_lote_adaptativo(lote):
         return resultados
 
 
-def obtener_ciclones_activos():
+def categoria_saffir_simpson(intensidad_mph, clasificacion):
+    """Calcula la categoria Saffir-Simpson a partir de la velocidad en mph."""
+    if clasificacion != 'HU':
+        return None  # solo aplica a huracanes; TS/TD no tienen categoria
+    if intensidad_mph >= 157:
+        return 5
+    if intensidad_mph >= 130:
+        return 4
+    if intensidad_mph >= 111:
+        return 3
+    if intensidad_mph >= 96:
+        return 2
+    if intensidad_mph >= 74:
+        return 1
+    return None
+
+
+def parsear_coordenada(valor):
+    """Convierte formatos como '18.3N' o '105.2W' a numero decimal con signo."""
+    if valor is None:
+        return None
+    if isinstance(valor, (int, float)):
+        return float(valor)
+    texto = str(valor).strip()
+    try:
+        if texto.endswith('N') or texto.endswith('E'):
+            return float(texto[:-1])
+        if texto.endswith('S') or texto.endswith('W'):
+            return -float(texto[:-1])
+        return float(texto)
+    except ValueError:
+        return None
+
+
+def distancia_km(lat1, lon1, lat2, lon2):
+    """Distancia aproximada entre dos coordenadas (formula de Haversine)."""
+    from math import radians, sin, cos, sqrt, atan2
+    R = 6371  # radio de la Tierra en km
+    dlat = radians(lat2 - lat1)
+    dlon = radians(lon2 - lon1)
+    a = sin(dlat / 2) ** 2 + cos(radians(lat1)) * cos(radians(lat2)) * sin(dlon / 2) ** 2
+    return R * 2 * atan2(sqrt(a), sqrt(1 - a))
+
+
+def estados_cercanos_a_ciclon(lat_ciclon, lon_ciclon, municipios, radio_km=400):
+    """
+    Aproximacion de que estados podrian estar en la zona de influencia del
+    ciclon, por CERCANIA a su posicion actual (no es la trayectoria oficial
+    pronosticada). Regresa lista de (estado, distancia_km_mas_cercana).
+    """
+    if lat_ciclon is None or lon_ciclon is None:
+        return []
+
+    distancia_por_estado = {}
+    for info in municipios.values():
+        d = distancia_km(lat_ciclon, lon_ciclon, info['lat'], info['lon'])
+        estado = info['estado']
+        if estado not in distancia_por_estado or d < distancia_por_estado[estado]:
+            distancia_por_estado[estado] = d
+
+    cercanos = [(estado, d) for estado, d in distancia_por_estado.items() if d <= radio_km]
+    cercanos.sort(key=lambda x: x[1])
+    return cercanos
+
+
+def obtener_ciclones_activos(municipios=None):
     """Ciclones activos en Atlantico (Golfo y Caribe) y Pacifico Oriental."""
     url = 'https://www.nhc.noaa.gov/CurrentStorms.json'
     try:
@@ -217,10 +282,29 @@ def obtener_ciclones_activos():
         storm_id = tormenta.get('id', '').upper()
         if not (storm_id.startswith('AL') or storm_id.startswith('EP')):
             continue
+
+        clasificacion = tormenta.get('classification', '')
+        intensidad_mph_raw = tormenta.get('intensity', 0)
+        try:
+            intensidad_mph = float(intensidad_mph_raw)
+        except (TypeError, ValueError):
+            intensidad_mph = 0
+        intensidad_kmh = round(intensidad_mph * 1.60934)
+
+        lat = parsear_coordenada(tormenta.get('latitudeNumeric', tormenta.get('latitude')))
+        lon = parsear_coordenada(tormenta.get('longitudeNumeric', tormenta.get('longitude')))
+
+        estados_cercanos = []
+        if municipios and lat is not None and lon is not None:
+            estados_cercanos = estados_cercanos_a_ciclon(lat, lon, municipios)
+
         ciclones.append({
+            'id': tormenta.get('id', ''),
             'nombre': tormenta.get('name', 'Desconocido'),
-            'clasificacion': tormenta.get('classification', ''),
-            'intensidad_mph': tormenta.get('intensity', 'N/D'),
+            'clasificacion': clasificacion,
+            'categoria': categoria_saffir_simpson(intensidad_mph, clasificacion),
+            'intensidad_kmh': intensidad_kmh,
+            'estados_cercanos': estados_cercanos,
         })
     return ciclones
 
@@ -234,19 +318,37 @@ def formatear_ciclon(ciclon):
         'STD': 'Depresion subtropical',
     }
     tipo = clasificaciones.get(ciclon['clasificacion'], ciclon['clasificacion'] or 'Sistema tropical')
-    return f"- {tipo} {ciclon['nombre']}: vientos {ciclon['intensidad_mph']} mph"
+
+    etiqueta_categoria = ''
+    if ciclon['categoria']:
+        etiqueta_categoria = f" (Categoria {ciclon['categoria']})"
+
+    linea = f"- {tipo}{etiqueta_categoria} {ciclon['nombre']}: vientos {ciclon['intensidad_kmh']} km/h"
+
+    if ciclon['estados_cercanos']:
+        nombres = ', '.join(estado for estado, _ in ciclon['estados_cercanos'][:6])
+        linea += f"\n  Estados en su zona de cercania (~400km): {nombres}"
+    else:
+        linea += "\n  Sin estados mexicanos dentro de ~400km de su posicion actual"
+
+    return linea
 
 
 def cargar_estado():
     try:
         with open(ARCHIVO_ESTADO, 'r', encoding='utf-8') as f:
-            return json.load(f)
+            estado = json.load(f)
     except (FileNotFoundError, json.JSONDecodeError):
-        return {
-            'riesgo_alto_activo': False,
-            'ultima_notificacion_alta': None,
-            'ultima_rutina_enviada': None,
-        }
+        estado = {}
+
+    # Valores por defecto para campos que puedan faltar (compatibilidad
+    # con archivos de estado de versiones anteriores del script)
+    estado.setdefault('viento_alto_activo', False)
+    estado.setdefault('ultima_notificacion_viento', None)
+    estado.setdefault('ciclones_activos_ids', [])
+    estado.setdefault('ultima_notificacion_ciclon', None)
+    estado.setdefault('ultima_rutina_enviada', None)
+    return estado
 
 
 def guardar_estado(estado):
@@ -314,9 +416,9 @@ def revisar_y_alertar():
     print(f'Municipios revisados: {revisados}/{len(items)}. Sin datos: {len(sin_datos)}')
     print(f'Riesgo alto: {len(riesgo_alto)}. Riesgo moderado: {len(riesgo_moderado)}')
 
-    ciclones = obtener_ciclones_activos()
+    ciclones = obtener_ciclones_activos(municipios)
     for c in ciclones:
-        print(f"Ciclon activo: {c['nombre']} ({c['clasificacion']}), {c['intensidad_mph']} mph")
+        print(f"Ciclon activo: {c['nombre']} ({c['clasificacion']}), {c['intensidad_kmh']} km/h")
 
     ahora = datetime.now(timezone.utc)
     hora_actual_utc = ahora.hour
@@ -334,47 +436,75 @@ def revisar_y_alertar():
             f"Esta informacion esta incompleta."
         )
 
-    # ---- 1) RIESGO ALTO: avisa de inmediato, a cualquier hora ----
-    if riesgo_alto or ciclones:
-        riesgo_era_nuevo = not estado.get('riesgo_alto_activo', False)
+    # ---- 1) VIENTO DE RIESGO ALTO: avisa de inmediato, a cualquier hora ----
+    # (independiente de ciclones, para que uno nunca bloquee al otro)
+    if riesgo_alto:
+        viento_era_nuevo = not estado.get('viento_alto_activo', False)
 
         horas_desde_ultima = None
-        if estado.get('ultima_notificacion_alta'):
-            ultima = datetime.fromisoformat(estado['ultima_notificacion_alta'])
+        if estado.get('ultima_notificacion_viento'):
+            ultima = datetime.fromisoformat(estado['ultima_notificacion_viento'])
             horas_desde_ultima = (ahora - ultima).total_seconds() / 3600
 
         toca_recordatorio = (
             horas_desde_ultima is not None and horas_desde_ultima >= HORAS_ENTRE_RECORDATORIOS
         )
 
-        if riesgo_era_nuevo or toca_recordatorio:
-            bloques = []
-            if riesgo_alto:
-                bloques.append(
-                    '🔴 ALERTA DE RIESGO ALTO 🔴\n'
-                    f'Viento igual o mayor a {UMBRAL_ALTO_KMH} km/h en las proximas {HORAS_A_FUTURO}h:\n'
-                    + '\n'.join(riesgo_alto)
-                )
-            if ciclones:
-                lineas = [formatear_ciclon(c) for c in ciclones]
-                bloques.append(
-                    '🌀 HURACAN/TORMENTA EN EL LITORAL (Golfo/Caribe/Pacifico) 🌀\n'
-                    + '\n'.join(lineas)
-                    + '\nRevisa nhc.noaa.gov o conagua.gob.mx para trayectoria oficial.'
-                )
-            enviar_telegram('\n\n'.join(bloques) + aviso_cobertura)
-            estado['riesgo_alto_activo'] = True
-            estado['ultima_notificacion_alta'] = ahora.isoformat()
+        if viento_era_nuevo or toca_recordatorio:
+            mensaje = (
+                '🔴 ALERTA DE RIESGO ALTO DE VIENTO 🔴\n'
+                f'Viento igual o mayor a {UMBRAL_ALTO_KMH} km/h en las proximas {HORAS_A_FUTURO}h:\n'
+                + '\n'.join(riesgo_alto)
+                + aviso_cobertura
+            )
+            enviar_telegram(mensaje)
+            estado['ultima_notificacion_viento'] = ahora.isoformat()
         else:
-            print('Riesgo alto sigue activo pero ya se aviso recientemente. No se repite.')
-            estado['riesgo_alto_activo'] = True
+            print('Viento de riesgo alto sigue activo pero ya se aviso recientemente. No se repite.')
+        estado['viento_alto_activo'] = True
     else:
-        if estado.get('riesgo_alto_activo', False):
-            enviar_telegram('✅ El riesgo ALTO de viento/ciclones ha pasado.')
-        estado['riesgo_alto_activo'] = False
-        estado['ultima_notificacion_alta'] = ahora.isoformat()
+        if estado.get('viento_alto_activo', False):
+            enviar_telegram('✅ El riesgo ALTO de viento ha pasado.')
+        estado['viento_alto_activo'] = False
+        estado['ultima_notificacion_viento'] = ahora.isoformat()
 
-    # ---- 2) REPORTE DE RUTINA: 8am, 3pm, 9pm hora Mexico ----
+    # ---- 2) CICLONES: avisa de inmediato, a cualquier hora ----
+    # (independiente del viento; una tormenta NUEVA siempre avisa aunque
+    # el viento haya avisado hace un minuto, y viceversa)
+    if ciclones:
+        ids_actuales = sorted(c['id'] for c in ciclones)
+        ids_previos = sorted(estado.get('ciclones_activos_ids', []))
+        hay_ciclon_nuevo = ids_actuales != ids_previos  # cambio en el set de tormentas activas
+
+        horas_desde_ultima = None
+        if estado.get('ultima_notificacion_ciclon'):
+            ultima = datetime.fromisoformat(estado['ultima_notificacion_ciclon'])
+            horas_desde_ultima = (ahora - ultima).total_seconds() / 3600
+
+        toca_recordatorio = (
+            horas_desde_ultima is not None and horas_desde_ultima >= HORAS_ENTRE_RECORDATORIOS
+        )
+
+        if hay_ciclon_nuevo or toca_recordatorio:
+            lineas = [formatear_ciclon(c) for c in ciclones]
+            mensaje = (
+                '🌀 HURACAN/TORMENTA EN EL LITORAL (Golfo/Caribe/Pacifico) 🌀\n'
+                + '\n'.join(lineas)
+                + '\nRevisa nhc.noaa.gov o conagua.gob.mx para trayectoria oficial.'
+                + aviso_cobertura
+            )
+            enviar_telegram(mensaje)
+            estado['ultima_notificacion_ciclon'] = ahora.isoformat()
+        else:
+            print('Ciclon(es) siguen activos pero ya se aviso recientemente. No se repite.')
+        estado['ciclones_activos_ids'] = ids_actuales
+    else:
+        if estado.get('ciclones_activos_ids'):
+            enviar_telegram('✅ Ya no hay huracanes/tormentas activas en el litoral mexicano.')
+        estado['ciclones_activos_ids'] = []
+        estado['ultima_notificacion_ciclon'] = ahora.isoformat()
+
+    # ---- 3) REPORTE DE RUTINA: 8am, 3pm, 9pm hora Mexico ----
     clave_rutina_actual = ahora.strftime('%Y-%m-%d-%H')
 
     if es_hora_de_rutina:
