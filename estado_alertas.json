@@ -1,1 +1,1 @@
-{"viento_alto_activo": false, "ultima_notificacion_viento": "2026-09-24T07:13:54.991974+00:00", "ciclones_activos_ids": ["al062026", "ep152026", "ep162026", "ep172026"], "ultima_notificacion_ciclon": "2026-09-24T07:13:54.991974+00:00", "ultima_rutina_enviada": "2026-09-24-03"}
+{"viento_alto_activo": true, "ultima_notificacion_viento": "2026-09-24T08:10:31.445564+00:00", "ciclones_activos_ids": ["al062026", "ep152026", "ep162026", "ep172026"], "ultima_notificacion_ciclon": "2026-09-24T07:13:54.991974+00:00", "ultima_rutina_enviada": "2026-09-24-03"}
