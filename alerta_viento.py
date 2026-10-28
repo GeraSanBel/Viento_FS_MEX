@@ -624,8 +624,45 @@ def enviar_lista(mensajes):
         time.sleep(0.7)
 
 
+def enviar_ubicacion_ciclon(ciclon):
+    """
+    Respaldo del mapa: manda un pin de ubicacion de Telegram con el nombre del
+    ciclon en su posicion actual. No depende de ninguna imagen externa.
+    """
+    if ciclon['lat'] is None or ciclon['lon'] is None:
+        return False
+
+    if ciclon['categoria']:
+        titulo = f"{tipo_ciclon(ciclon)} {nombre_amigable(ciclon['nombre'])} · Cat. {ciclon['categoria']}"
+    else:
+        titulo = f"{tipo_ciclon(ciclon)} {nombre_amigable(ciclon['nombre'])}"
+    direccion = f"Posición actual · vientos {ciclon['intensidad_kmh']} km/h"
+
+    url = f'https://api.telegram.org/bot{TELEGRAM_TOKEN}/sendVenue'
+    payload = {
+        'chat_id': TELEGRAM_CHAT_ID,
+        'latitude': ciclon['lat'],
+        'longitude': ciclon['lon'],
+        'title': titulo[:100],
+        'address': direccion[:200],
+    }
+    try:
+        respuesta = requests.post(url, data=payload, timeout=20)
+        if respuesta.status_code == 200:
+            print('Telegram: ubicacion (pin) enviada')
+            return True
+        print(f'Telegram: fallo al enviar ubicacion ({respuesta.status_code}) - {respuesta.text[:200]}')
+    except Exception as error:
+        print(f'Telegram: error enviando ubicacion - {error}')
+    return False
+
+
 def enviar_ciclon(ciclon):
-    """Envia un ciclon con su mapa oficial; si no hay mapa, solo el texto."""
+    """
+    Envia un ciclon con su posicion visible en un mapa:
+      1) Mapa oficial del NHC como imagen (posicion, cono de trayectoria, avisos).
+      2) Si la imagen no esta disponible: texto + pin de ubicacion de Telegram.
+    """
     texto = formatear_ciclon(ciclon)
     imagen = descargar_imagen_ciclon(ciclon['id'])
     if imagen:
@@ -636,7 +673,11 @@ def enviar_ciclon(ciclon):
         if enviar_foto_telegram(imagen, f"🗺 {esc(tipo_ciclon(ciclon))} {esc(nombre_amigable(ciclon['nombre']))}"):
             enviar_telegram(texto)
             return
+
+    print(f"Mapa NHC no disponible para {ciclon['nombre']}: se usa el pin de ubicacion.")
     enviar_telegram(texto)
+    if not enviar_ubicacion_ciclon(ciclon):
+        print(f"AVISO: no se pudo mostrar la posicion de {ciclon['nombre']} (sin imagen ni coordenadas).")
 
 
 # ---------------------------------------------------------------
