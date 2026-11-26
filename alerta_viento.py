@@ -619,9 +619,12 @@ def enviar_foto_telegram(imagen_bytes, texto):
 
 def enviar_lista(mensajes):
     """Envia varios mensajes en orden, con una pausa corta entre ellos."""
+    todo_ok = True
     for mensaje in mensajes:
-        enviar_telegram(mensaje)
+        if not enviar_telegram(mensaje):
+            todo_ok = False
         time.sleep(0.7)
+    return todo_ok
 
 
 def enviar_ubicacion_ciclon(ciclon):
@@ -746,6 +749,23 @@ def resumen_por_zona(entradas):
 # Proceso principal
 # ---------------------------------------------------------------
 
+def ultima_rutina_programada(ahora):
+    """Ultimo horario de rutina vencido en UTC, incluso tras retrasos del cron."""
+    hora = ahora.astimezone(timezone.utc).replace(minute=0, second=0, microsecond=0)
+    candidatos = [
+        (hora - timedelta(days=dias)).replace(hour=h)
+        for dias in (0, 1)
+        for h in HORAS_RUTINA_UTC
+    ]
+    return max(c for c in candidatos if c <= hora)
+
+
+def rutina_por_enviar(ahora, ultima_enviada):
+    """Envia solo el reporte mas reciente, sin acumular reportes obsoletos."""
+    clave = ultima_rutina_programada(ahora).strftime('%Y-%m-%d-%H')
+    return clave if not ultima_enviada or ultima_enviada < clave else None
+
+
 def revisar_y_alertar():
     municipios = cargar_municipios()
     items = list(municipios.items())
@@ -797,9 +817,8 @@ def revisar_y_alertar():
     ahora = datetime.now(timezone.utc)
     hora_actual_utc = ahora.hour
     estado = cargar_estado()
-    es_hora_de_rutina = hora_actual_utc in HORAS_RUTINA_UTC
-    clave_rutina_actual = ahora.strftime('%Y-%m-%d-%H')
-    rutina_pendiente = es_hora_de_rutina and estado.get('ultima_rutina_enviada') != clave_rutina_actual
+    clave_rutina_actual = rutina_por_enviar(ahora, estado.get('ultima_rutina_enviada'))
+    rutina_pendiente = clave_rutina_actual is not None
 
     # Aviso de cobertura, solo si hubo municipios sin revisar
     aviso_cobertura = None
@@ -859,8 +878,7 @@ def revisar_y_alertar():
         )
 
         if rutina_pendiente and (viento_era_nuevo or toca_recordatorio):
-            print('Riesgo alto incluido en el reporte de rutina de esta hora; no se envia aviso aparte.')
-            estado['ultima_notificacion_viento'] = ahora.isoformat()
+            print('Riesgo alto incluido en el reporte de rutina pendiente; no se envia aviso aparte.')
         elif viento_era_nuevo or toca_recordatorio:
             titulo = (
                 f"🔴 <b>ALERTA DE RIESGO ALTO · VIENTO</b>\n"
@@ -882,47 +900,48 @@ def revisar_y_alertar():
         estado['ultima_notificacion_viento'] = ahora.isoformat()
 
     # ---- 3) REPORTE DE RUTINA: 8am, 3pm, 9pm hora del centro de Mexico ----
-    if es_hora_de_rutina:
-        if estado.get('ultima_rutina_enviada') == clave_rutina_actual:
-            print(f'El reporte de rutina de esta hora ({clave_rutina_actual}) ya se envio. No se repite.')
+    if rutina_pendiente:
+        fecha_local = formatear_fecha_local(a_hora_mexico(ahora))
+
+        if ciclones:
+            nombres = []
+            for c in sorted(ciclones, key=lambda c: c['intensidad_kmh'], reverse=True):
+                detalle = f"Cat. {c['categoria']}" if c['categoria'] else tipo_ciclon(c)
+                nombres.append(f"{nombre_amigable(c['nombre'])} ({detalle}, {c['intensidad_kmh']} km/h)")
+            linea_ciclones = f"🌀 <b>Ciclones activos:</b> {esc(', '.join(nombres))}"
         else:
-            fecha_local = formatear_fecha_local(a_hora_mexico(ahora))
+            linea_ciclones = ('🌀 <b>Ciclones:</b> sin huracanes ni tormentas activas '
+                              'en el litoral (Golfo, Caribe y Pacífico)')
 
-            if ciclones:
-                nombres = []
-                for c in sorted(ciclones, key=lambda c: c['intensidad_kmh'], reverse=True):
-                    detalle = f"Cat. {c['categoria']}" if c['categoria'] else tipo_ciclon(c)
-                    nombres.append(f"{nombre_amigable(c['nombre'])} ({detalle}, {c['intensidad_kmh']} km/h)")
-                linea_ciclones = f"🌀 <b>Ciclones activos:</b> {esc(', '.join(nombres))}"
-            else:
-                linea_ciclones = ('🌀 <b>Ciclones:</b> sin huracanes ni tormentas activas '
-                                  'en el litoral (Golfo, Caribe y Pacífico)')
+        resumen = [
+            '📋 <b>REPORTE DE RUTINA</b>',
+            f'🗓 {esc(fecha_local)} (hora del centro de México)',
+            '',
+            linea_ciclones,
+            '',
+            f'💨 <b>Viento por zona</b> (≥ {UMBRAL_MODERADO_KMH} km/h, próximas {HORAS_A_FUTURO} h):',
+        ]
+        resumen += resumen_por_zona(riesgo)
+        resumen += ['', f'📡 Cobertura: {revisados} de {len(items)} municipios revisados']
 
-            resumen = [
-                '📋 <b>REPORTE DE RUTINA</b>',
-                f'🗓 {esc(fecha_local)} (hora del centro de México)',
-                '',
-                linea_ciclones,
-                '',
-                f'💨 <b>Viento por zona</b> (≥ {UMBRAL_MODERADO_KMH} km/h, próximas {HORAS_A_FUTURO} h):',
-            ]
-            resumen += resumen_por_zona(riesgo)
-            resumen += ['', f'📡 Cobertura: {revisados} de {len(items)} municipios revisados']
+        mensajes = ['\n'.join(resumen)]
 
-            mensajes = ['\n'.join(resumen)]
+        titulo_rutina = (
+            f"💨 <b>Viento previsto · próximas {HORAS_A_FUTURO} h</b>\n"
+            f"<i>🔴 60 km/h o más · 🟡 45 a 59 km/h</i>"
+        )
+        mensajes += construir_mensajes_viento(riesgo, titulo_rutina)
+        if aviso_cobertura:
+            mensajes.append(aviso_cobertura)
 
-            titulo_rutina = (
-                f"💨 <b>Viento previsto · próximas {HORAS_A_FUTURO} h</b>\n"
-                f"<i>🔴 60 km/h o más · 🟡 45 a 59 km/h</i>"
-            )
-            mensajes += construir_mensajes_viento(riesgo, titulo_rutina)
-            if aviso_cobertura:
-                mensajes.append(aviso_cobertura)
-
-            enviar_lista(mensajes)
+        if enviar_lista(mensajes):
             estado['ultima_rutina_enviada'] = clave_rutina_actual
+            if riesgo_alto:
+                estado['ultima_notificacion_viento'] = ahora.isoformat()
+        else:
+            print('AVISO: reporte de rutina incompleto; se reintentara en la siguiente consulta.')
     else:
-        print(f'No es hora de reporte de rutina (hora UTC actual: {hora_actual_utc}).')
+        print(f'No hay reporte de rutina pendiente (hora UTC actual: {hora_actual_utc}).')
 
     guardar_estado(estado)
 
