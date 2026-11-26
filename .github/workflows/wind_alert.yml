@@ -23,7 +23,23 @@ jobs:
       - name: Instalar dependencias
         run: pip install requests
 
+      - name: Probar envio a Telegram (sin pronostico)
+        if: ${{ github.event_name == 'workflow_dispatch' && github.ref_name == 'mejoras/seguridad-v2' }}
+        env:
+          TELEGRAM_TOKEN: ${{ secrets.TELEGRAM_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+        run: |
+          python - <<'PY'
+          import alerta_viento as bot
+          if not bot.TELEGRAM_TOKEN or not bot.TELEGRAM_CHAT_ID:
+              raise SystemExit('Faltan credenciales de Telegram.')
+          if not bot.enviar_telegram('✅ PRUEBA DE COMUNICACIÓN · FS Alerta Climática. No es una alerta meteorológica.'):
+              raise SystemExit('Telegram no confirmó el envío.')
+          print('Telegram confirmó el envío de prueba.')
+          PY
+
       - name: Ejecutar alerta
+        if: ${{ github.event_name != 'workflow_dispatch' || github.ref_name != 'mejoras/seguridad-v2' }}
         env:
           OWM_API_KEY: ${{ secrets.OWM_API_KEY }}
           TELEGRAM_TOKEN: ${{ secrets.TELEGRAM_TOKEN }}
@@ -31,6 +47,7 @@ jobs:
         run: python alerta_viento.py
 
       - name: Guardar estado
+        if: ${{ github.event_name != 'workflow_dispatch' || github.ref_name != 'mejoras/seguridad-v2' }}
         run: |
           git config user.name "github-actions"
           git config user.email "actions@github.com"
