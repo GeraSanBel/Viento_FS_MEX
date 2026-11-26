@@ -58,6 +58,9 @@ jobs:
       - name: Validar motor por localidad y fallos de fuentes (sin red)
         run: python -m unittest -v test_motor_alertas
 
+      - name: Validar prioridades por sucursal (datos sinteticos, sin red)
+        run: python -m unittest -v test_prioridades_sucursales
+
       - name: Ejecutar alerta
         if: ${{ github.ref_name == 'main' }}
         env:
