@@ -61,6 +61,14 @@ jobs:
       - name: Validar prioridades por sucursal (datos sinteticos, sin red)
         run: python -m unittest -v test_prioridades_sucursales
 
+      - name: Configurar Node para pruebas de interfaz
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Validar interfaz piloto (sin red)
+        run: node app/test_app.cjs
+
       - name: Ejecutar alerta
         if: ${{ github.ref_name == 'main' }}
         env:
