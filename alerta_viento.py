@@ -25,7 +25,7 @@ import json
 import time
 import html
 from datetime import datetime, timezone, timedelta
-from math import radians, sin, cos, sqrt, atan2
+from math import radians, sin, cos, sqrt, atan2, isfinite
 import requests
 
 # ============ CONFIGURACION ============
@@ -41,6 +41,8 @@ UMBRAL_MODERADO_KMH = 45
 
 # Umbral de riesgo ALTO (avisa de inmediato, a cualquier hora)
 UMBRAL_ALTO_KMH = 60
+UMBRAL_CRITICO_KMH = 90
+INCREMENTO_ALERTA_KMH = 15
 
 # Horas hacia adelante a revisar en el pronostico
 HORAS_A_FUTURO = 18
@@ -198,32 +200,23 @@ def cargar_municipios():
         return json.load(f)
 
 
+def dato_viento_valido(valor):
+    return isinstance(valor, (int, float)) and not isinstance(valor, bool) and isfinite(valor) and valor >= 0
+
+
 def extraer_peor_viento(dato_municipio):
-    """De la respuesta horaria de Open-Meteo, saca el peor momento de viento."""
+    """No confundir datos faltantes con viento cero."""
     horas = dato_municipio.get('hourly', {})
     tiempos = horas.get('time', [])
     velocidades = horas.get('wind_speed_10m', [])
     rafagas = horas.get('wind_gusts_10m', [])
-
-    peor_velocidad = 0
-    peor_rafaga = 0
-    peor_hora = None
-
-    for i in range(len(tiempos)):
-        velocidad = velocidades[i] if i < len(velocidades) else 0
-        rafaga = rafagas[i] if i < len(rafagas) else velocidad
-        if velocidad is None:
-            velocidad = 0
-        if rafaga is None:
-            rafaga = velocidad
-
-        if max(velocidad, rafaga) > max(peor_velocidad, peor_rafaga):
-            peor_velocidad = velocidad
-            peor_rafaga = rafaga
-            peor_hora = tiempos[i]
-
-    return peor_velocidad, peor_rafaga, peor_hora
-
+    if not (len(tiempos) == len(velocidades) == len(rafagas) == HORAS_A_FUTURO):
+        raise ValueError('Pronostico horario incompleto')
+    if any(not t or not dato_viento_valido(v) or not dato_viento_valido(r)
+           for t, v, r in zip(tiempos, velocidades, rafagas)):
+        raise ValueError('Pronostico con valores ausentes o invalidos')
+    i = max(range(len(tiempos)), key=lambda j: max(velocidades[j], rafagas[j]))
+    return velocidades[i], rafagas[i], tiempos[i]
 
 def consultar_open_meteo(lote, intentos=1, espera=1):
     """
@@ -260,6 +253,8 @@ def consultar_open_meteo(lote, intentos=1, espera=1):
     if isinstance(datos, dict):
         datos = [datos]
 
+    if not isinstance(datos, list) or len(datos) != len(lote):
+        raise ValueError('Respuesta de lote incompleta')
     resultados = {}
     for (clave, _info), dato_municipio in zip(lote, datos):
         resultados[clave] = extraer_peor_viento(dato_municipio)
@@ -291,21 +286,17 @@ def consultar_openweather_respaldo(clave, info):
         return None
 
     bloques = max(1, HORAS_A_FUTURO // 3)
-    peor_velocidad = 0
-    peor_rafaga = 0
-    peor_hora = None
-
-    for bloque in datos.get('list', [])[:bloques]:
+    registros = datos.get('list', [])[:bloques]
+    if len(registros) != bloques:
+        return None
+    muestras = []
+    for bloque in registros:
         viento = bloque.get('wind', {})
-        velocidad = viento.get('speed', 0) * 3.6
-        rafaga = viento.get('gust', viento.get('speed', 0)) * 3.6
-        if max(velocidad, rafaga) > max(peor_velocidad, peor_rafaga):
-            peor_velocidad = velocidad
-            peor_rafaga = rafaga
-            peor_hora = bloque.get('dt_txt')
-
-    return peor_velocidad, peor_rafaga, peor_hora
-
+        v, r, hora = viento.get('speed'), viento.get('gust'), bloque.get('dt_txt')
+        if not hora or not dato_viento_valido(v) or not dato_viento_valido(r):
+            return None
+        muestras.append((v * 3.6, r * 3.6, hora))
+    return max(muestras, key=lambda muestra: max(muestra[0], muestra[1]))
 
 def procesar_lote_adaptativo(lote):
     """
@@ -415,11 +406,15 @@ def obtener_ciclones_activos(municipios=None):
         respuesta.raise_for_status()
         datos = respuesta.json()
     except Exception as error:
-        print(f'Error consultando NHC: {error}')
-        return []
+        print(f'Error consultando NHC: {type(error).__name__}')
+        return None
+    if not isinstance(datos, dict) or not isinstance(datos.get('activeStorms'), list):
+        return None
+    if any(not isinstance(t, dict) or not isinstance(t.get('id'), str) or not t['id'] for t in datos['activeStorms']):
+        return None
 
     ciclones = []
-    for tormenta in datos.get('activeStorms', []):
+    for tormenta in datos['activeStorms']:
         storm_id = tormenta.get('id', '').upper()
         if not (storm_id.startswith('AL') or storm_id.startswith('EP')):
             continue
@@ -548,6 +543,9 @@ def cargar_estado():
     estado.setdefault('ciclones_activos_ids', [])
     estado.setdefault('ultima_notificacion_ciclon', None)
     estado.setdefault('ultima_rutina_enviada', None)
+    estado.setdefault('riesgos_notificados', {})
+    estado.setdefault('fallas_notificadas', [])
+    estado.setdefault('ultima_notificacion_cobertura', None)
     return estado
 
 
@@ -583,7 +581,7 @@ def enviar_telegram(texto):
         }
         try:
             respuesta = requests.post(url, data=payload, timeout=20)
-            if respuesta.status_code != 200:
+            if respuesta.status_code != 200 or respuesta.json().get('ok') is not True:
                 todo_ok = False
                 print(f'Telegram: fallo ({respuesta.status_code}) - {respuesta.text[:200]}')
         except Exception as error:
@@ -608,7 +606,7 @@ def enviar_foto_telegram(imagen_bytes, texto):
             files={'photo': ('ciclon.png', imagen_bytes, 'image/png')},
             timeout=40,
         )
-        if respuesta.status_code == 200:
+        if respuesta.status_code == 200 and respuesta.json().get('ok') is True:
             print('Telegram: imagen enviada')
             return True
         print(f'Telegram: fallo al enviar imagen ({respuesta.status_code}) - {respuesta.text[:200]}')
@@ -651,7 +649,7 @@ def enviar_ubicacion_ciclon(ciclon):
     }
     try:
         respuesta = requests.post(url, data=payload, timeout=20)
-        if respuesta.status_code == 200:
+        if respuesta.status_code == 200 and respuesta.json().get('ok') is True:
             print('Telegram: ubicacion (pin) enviada')
             return True
         print(f'Telegram: fallo al enviar ubicacion ({respuesta.status_code}) - {respuesta.text[:200]}')
@@ -671,16 +669,16 @@ def enviar_ciclon(ciclon):
     if imagen:
         pie = texto + '\n\n🗺 Mapa oficial NHC: posición actual, cono de trayectoria y avisos.'
         if len(pie) <= 1024 and enviar_foto_telegram(imagen, pie):
-            return
+            return True
         # Si el texto es muy largo para un pie de foto, va la imagen y luego el texto
         if enviar_foto_telegram(imagen, f"🗺 {esc(tipo_ciclon(ciclon))} {esc(nombre_amigable(ciclon['nombre']))}"):
-            enviar_telegram(texto)
-            return
+            return enviar_telegram(texto)
 
     print(f"Mapa NHC no disponible para {ciclon['nombre']}: se usa el pin de ubicacion.")
-    enviar_telegram(texto)
+    texto_ok = enviar_telegram(texto)
     if not enviar_ubicacion_ciclon(ciclon):
         print(f"AVISO: no se pudo mostrar la posicion de {ciclon['nombre']} (sin imagen ni coordenadas).")
+    return texto_ok
 
 
 # ---------------------------------------------------------------
@@ -688,7 +686,7 @@ def enviar_ciclon(ciclon):
 # ---------------------------------------------------------------
 
 def formatear_entrada(entrada):
-    icono = '🔴' if entrada['maximo'] >= UMBRAL_ALTO_KMH else '🟡'
+    icono = {'CRITICO': '🟣', 'ALTO': '🔴', 'MODERADO': '🟡', 'NORMAL': '🟢'}[nivel_viento(entrada['maximo'])]
     return (
         f"{icono} <b>{esc(nombre_amigable(entrada['ciudad']))}</b> · {esc(nombre_amigable(entrada['estado']))}\n"
         f"      💨 Viento {entrada['velocidad']:.0f} km/h · Rachas {entrada['rafaga']:.0f} km/h\n"
@@ -722,7 +720,7 @@ def construir_mensajes_viento(entradas, titulo):
     return mensajes
 
 
-def resumen_por_zona(entradas):
+def resumen_por_zona(entradas, zonas_sin_datos=()):
     """Lineas de resumen: cuantas localidades en riesgo hay en cada zona."""
     por_zona = agrupar_por_zona(entradas)
     lineas = []
@@ -732,15 +730,21 @@ def resumen_por_zona(entradas):
         lista = por_zona.get(zona, [])
         etiqueta = 'Otras zonas' if zona == 'OTRAS' else zona.capitalize()
         if not lista:
-            lineas.append(f"      {etiqueta}: ✅ sin riesgo")
+            texto = '⚠️ datos incompletos' if zona in zonas_sin_datos else '✅ sin riesgo previsto'
+            lineas.append(f"      {etiqueta}: {texto}")
             continue
-        altos = sum(1 for e in lista if e['maximo'] >= UMBRAL_ALTO_KMH)
-        moderados = len(lista) - altos
+        criticos = sum(1 for e in lista if e['maximo'] >= UMBRAL_CRITICO_KMH)
+        altos = sum(1 for e in lista if UMBRAL_ALTO_KMH <= e['maximo'] < UMBRAL_CRITICO_KMH)
+        moderados = len(lista) - altos - criticos
         partes = []
+        if criticos:
+            partes.append(f'🟣 {criticos}')
         if altos:
             partes.append(f"🔴 {altos}")
         if moderados:
             partes.append(f"🟡 {moderados}")
+        if zona in zonas_sin_datos:
+            partes.append('⚠️ datos incompletos')
         lineas.append(f"      {etiqueta}: {' · '.join(partes)}")
     return lineas
 
@@ -766,12 +770,99 @@ def rutina_por_enviar(ahora, ultima_enviada):
     return clave if not ultima_enviada or ultima_enviada < clave else None
 
 
+def nivel_viento(maximo):
+    if maximo >= UMBRAL_CRITICO_KMH:
+        return 'CRITICO'
+    if maximo >= UMBRAL_ALTO_KMH:
+        return 'ALTO'
+    if maximo >= UMBRAL_MODERADO_KMH:
+        return 'MODERADO'
+    return 'NORMAL'
+
+
+def recordatorio_vencido(ahora, ultima):
+    if not ultima:
+        return True
+    return (ahora - datetime.fromisoformat(ultima)).total_seconds() >= HORAS_ENTRE_RECORDATORIOS * 3600
+
+
+def motivo_alerta(entrada, previo, ahora):
+    nivel = nivel_viento(entrada['maximo'])
+    if not previo:
+        return 'NUEVO' if nivel in ('ALTO', 'CRITICO') else None
+    anterior = previo['nivel']
+    orden = {'NORMAL': 0, 'MODERADO': 1, 'ALTO': 2, 'CRITICO': 3}
+    if nivel != anterior:
+        if orden[nivel] > orden[anterior] and nivel in ('ALTO', 'CRITICO'):
+            return 'ESCALAMIENTO'
+        if orden[nivel] < orden[anterior]:
+            return 'DESCENSO'
+    if nivel in ('ALTO', 'CRITICO'):
+        if entrada['maximo'] - previo['maximo'] >= INCREMENTO_ALERTA_KMH:
+            return 'AUMENTO'
+        if recordatorio_vencido(ahora, previo['ultima']):
+            return 'RECORDATORIO'
+    return None
+
+
+def notificar_viento(observaciones, estado, ahora):
+    """Estado por clave de localidad; un dato ausente nunca confirma descenso."""
+    anteriores = estado.setdefault('riesgos_notificados', {})
+    grupos = {}
+    for clave, entrada in observaciones.items():
+        motivo = motivo_alerta(entrada, anteriores.get(clave), ahora)
+        if motivo:
+            nivel = nivel_viento(entrada['maximo'])
+            grupos.setdefault((motivo, nivel), []).append((clave, entrada))
+    prioridad = {'CRITICO': 0, 'ALTO': 1, 'MODERADO': 2, 'NORMAL': 3}
+    etiquetas = {
+        'NUEVO': 'NUEVO RIESGO', 'ESCALAMIENTO': 'AUMENTO DE NIVEL',
+        'AUMENTO': 'INCREMENTO DE VIENTO', 'RECORDATORIO': 'RIESGO PERSISTENTE',
+        'DESCENSO': 'DISMINUCIÓN DEL RIESGO PREVISTO',
+    }
+    for (motivo, nivel), pares in sorted(grupos.items(), key=lambda g: prioridad[g[0][1]]):
+        titulo = (f"<b>{etiquetas[motivo]} · {nivel}</b>\n"
+                  f"Pronóstico de las próximas {HORAS_A_FUTURO} h (hora del centro de México)")
+        if motivo == 'DESCENSO':
+            titulo += '\nLa reducción del pronóstico no certifica la seguridad de las estructuras.'
+        if enviar_lista(construir_mensajes_viento([e for _, e in pares], titulo)):
+            for clave, entrada in pares:
+                if nivel == 'NORMAL':
+                    anteriores.pop(clave, None)
+                else:
+                    anteriores[clave] = {'nivel': nivel, 'maximo': entrada['maximo'], 'ultima': ahora.isoformat()}
+        else:
+            print('AVISO: alerta por localidad no confirmada; se reevaluara en la siguiente consulta.')
+
+
+def notificar_cobertura(fallas, estado, ahora):
+    anteriores = set(estado.get('fallas_notificadas', []))
+    actuales = set(fallas)
+    if actuales:
+        if actuales - anteriores or recordatorio_vencido(ahora, estado.get('ultima_notificacion_cobertura')):
+            lista = sorted(actuales)
+            extra = f' y {len(lista)-15} más' if len(lista) > 15 else ''
+            texto = (f"⚠️ <b>DATOS METEOROLÓGICOS INCOMPLETOS</b>\n"
+                     f"Fuentes/localidades sin datos: {len(lista)}.\n"
+                     f"{esc(', '.join(lista[:15]))}{extra}.\n"
+                     "No se confirma la normalización de las localidades sin pronóstico.")
+            if enviar_telegram(texto):
+                estado['fallas_notificadas'] = lista
+                estado['ultima_notificacion_cobertura'] = ahora.isoformat()
+    elif anteriores:
+        if enviar_telegram('✅ <b>Cobertura meteorológica restablecida.</b>'):
+            estado['fallas_notificadas'] = []
+            estado['ultima_notificacion_cobertura'] = None
+
+
 def revisar_y_alertar():
     municipios = cargar_municipios()
     items = list(municipios.items())
 
     riesgo = []       # todas las localidades con viento >= umbral moderado
     sin_datos = []
+    zonas_sin_datos = set()
+    observaciones = {}
 
     lotes = [items[i:i + TAMANO_LOTE] for i in range(0, len(items), TAMANO_LOTE)]
 
@@ -782,20 +873,20 @@ def revisar_y_alertar():
         for clave, info in lote:
             if clave not in resultados_lote:
                 sin_datos.append(f"{nombre_amigable(info['ciudad'])} ({nombre_amigable(info['estado'])})")
+                zonas_sin_datos.add(region_de(info['estado']))
                 continue
 
             velocidad, rafaga, hora = resultados_lote[clave]
             maximo = max(velocidad, rafaga)
 
+            entrada = {
+                'ciudad': info['ciudad'], 'estado': info['estado'],
+                'velocidad': velocidad, 'rafaga': rafaga,
+                'maximo': maximo, 'hora': hora,
+            }
+            observaciones[clave] = entrada
             if maximo >= UMBRAL_MODERADO_KMH:
-                riesgo.append({
-                    'ciudad': info['ciudad'],
-                    'estado': info['estado'],
-                    'velocidad': velocidad,
-                    'rafaga': rafaga,
-                    'maximo': maximo,
-                    'hora': hora,
-                })
+                riesgo.append(entrada)
 
         time.sleep(PAUSA_ENTRE_LOTES)
 
@@ -811,7 +902,7 @@ def revisar_y_alertar():
         print(f'AVISO: estados sin zona asignada en REGIONES: {estados_sin_zona}')
 
     ciclones = obtener_ciclones_activos(municipios)
-    for c in ciclones:
+    for c in ciclones or []:
         print(f"Ciclon activo: {c['nombre']} ({c['clasificacion']}), {c['intensidad_kmh']} km/h")
 
     ahora = datetime.now(timezone.utc)
@@ -831,79 +922,39 @@ def revisar_y_alertar():
             f"({esc(listado)}{esc(extra)}). Esta información puede estar incompleta."
         )
 
-    # ---- 1) CICLONES (lo mas critico va primero): avisa de inmediato, a cualquier hora ----
-    # (independiente del viento; una tormenta NUEVA siempre avisa aunque
-    # el viento haya avisado hace un minuto, y viceversa)
-    if ciclones:
+    # 1) CICLONES: diferenciar error de fuente de ausencia real de ciclones.
+    if ciclones is not None:
         ids_actuales = sorted(c['id'] for c in ciclones)
         ids_previos = sorted(estado.get('ciclones_activos_ids', []))
-        hay_ciclon_nuevo = ids_actuales != ids_previos  # cambio en el set de tormentas activas
-
-        horas_desde_ultima = None
-        if estado.get('ultima_notificacion_ciclon'):
-            ultima = datetime.fromisoformat(estado['ultima_notificacion_ciclon'])
-            horas_desde_ultima = (ahora - ultima).total_seconds() / 3600
-
-        toca_recordatorio = (
-            horas_desde_ultima is not None and horas_desde_ultima >= HORAS_ENTRE_RECORDATORIOS
-        )
-
-        if hay_ciclon_nuevo or toca_recordatorio:
-            # Los mas intensos primero
+        if ciclones and (ids_actuales != ids_previos or recordatorio_vencido(ahora, estado.get('ultima_notificacion_ciclon'))):
+            resultados = []
             for ciclon in sorted(ciclones, key=lambda c: c['intensidad_kmh'], reverse=True):
-                enviar_ciclon(ciclon)
+                resultados.append(enviar_ciclon(ciclon))
                 time.sleep(0.7)
-            estado['ultima_notificacion_ciclon'] = ahora.isoformat()
-        else:
-            print('Ciclon(es) siguen activos pero ya se aviso recientemente. No se repite.')
-        estado['ciclones_activos_ids'] = ids_actuales
-    else:
-        if estado.get('ciclones_activos_ids'):
-            enviar_telegram('✅ <b>Ya no hay huracanes ni tormentas activas en el litoral mexicano.</b>')
-        estado['ciclones_activos_ids'] = []
-        estado['ultima_notificacion_ciclon'] = ahora.isoformat()
+            if all(resultados):
+                estado['ultima_notificacion_ciclon'] = ahora.isoformat()
+                estado['ciclones_activos_ids'] = ids_actuales
+        elif not ciclones and ids_previos:
+            if enviar_telegram('✅ <b>El NHC ya no reporta ciclones activos en las cuencas monitoreadas.</b>'):
+                estado['ciclones_activos_ids'] = []
+                estado['ultima_notificacion_ciclon'] = ahora.isoformat()
 
-    # ---- 2) VIENTO DE RIESGO ALTO: avisa de inmediato, a cualquier hora ----
-    # (independiente de ciclones, para que uno nunca bloquee al otro)
-    if riesgo_alto:
-        viento_era_nuevo = not estado.get('viento_alto_activo', False)
+    # 2) VIENTO por localidad. Una alerta nueva no depende del estado nacional.
+    notificar_viento(observaciones, estado, ahora)
+    fallas = sin_datos + (['NHC/NOAA (ciclones)'] if ciclones is None else [])
+    notificar_cobertura(fallas, estado, ahora)
+    estado['viento_alto_activo'] = bool(riesgo_alto or any(
+        v['nivel'] in ('ALTO', 'CRITICO') for v in estado['riesgos_notificados'].values()
+    ) or (sin_datos and estado.get('viento_alto_activo')))
 
-        horas_desde_ultima = None
-        if estado.get('ultima_notificacion_viento'):
-            ultima = datetime.fromisoformat(estado['ultima_notificacion_viento'])
-            horas_desde_ultima = (ahora - ultima).total_seconds() / 3600
-
-        toca_recordatorio = (
-            horas_desde_ultima is not None and horas_desde_ultima >= HORAS_ENTRE_RECORDATORIOS
-        )
-
-        if rutina_pendiente and (viento_era_nuevo or toca_recordatorio):
-            print('Riesgo alto incluido en el reporte de rutina pendiente; no se envia aviso aparte.')
-        elif viento_era_nuevo or toca_recordatorio:
-            titulo = (
-                f"🔴 <b>ALERTA DE RIESGO ALTO · VIENTO</b>\n"
-                f"Viento o rachas de {UMBRAL_ALTO_KMH} km/h o más en las próximas {HORAS_A_FUTURO} h\n"
-                f"<i>(horas en hora del centro de México)</i>"
-            )
-            mensajes = construir_mensajes_viento(riesgo_alto, titulo)
-            if aviso_cobertura:
-                mensajes.append(aviso_cobertura)
-            enviar_lista(mensajes)
-            estado['ultima_notificacion_viento'] = ahora.isoformat()
-        else:
-            print('Viento de riesgo alto sigue activo pero ya se aviso recientemente. No se repite.')
-        estado['viento_alto_activo'] = True
-    else:
-        if estado.get('viento_alto_activo', False):
-            enviar_telegram('✅ <b>El riesgo ALTO de viento ha pasado.</b>')
-        estado['viento_alto_activo'] = False
-        estado['ultima_notificacion_viento'] = ahora.isoformat()
 
     # ---- 3) REPORTE DE RUTINA: 8am, 3pm, 9pm hora del centro de Mexico ----
     if rutina_pendiente:
         fecha_local = formatear_fecha_local(a_hora_mexico(ahora))
 
-        if ciclones:
+        if ciclones is None:
+            linea_ciclones = '⚠️ <b>Ciclones:</b> datos NHC no disponibles; situación no confirmada.'
+        elif ciclones:
             nombres = []
             for c in sorted(ciclones, key=lambda c: c['intensidad_kmh'], reverse=True):
                 detalle = f"Cat. {c['categoria']}" if c['categoria'] else tipo_ciclon(c)
@@ -921,14 +972,14 @@ def revisar_y_alertar():
             '',
             f'💨 <b>Viento por zona</b> (≥ {UMBRAL_MODERADO_KMH} km/h, próximas {HORAS_A_FUTURO} h):',
         ]
-        resumen += resumen_por_zona(riesgo)
+        resumen += resumen_por_zona(riesgo, zonas_sin_datos)
         resumen += ['', f'📡 Cobertura: {revisados} de {len(items)} municipios revisados']
 
         mensajes = ['\n'.join(resumen)]
 
         titulo_rutina = (
             f"💨 <b>Viento previsto · próximas {HORAS_A_FUTURO} h</b>\n"
-            f"<i>🔴 60 km/h o más · 🟡 45 a 59 km/h</i>"
+            f"<i>🟣 90+ km/h · 🔴 60 a 89 km/h · 🟡 45 a 59 km/h</i>"
         )
         mensajes += construir_mensajes_viento(riesgo, titulo_rutina)
         if aviso_cobertura:
@@ -936,8 +987,6 @@ def revisar_y_alertar():
 
         if enviar_lista(mensajes):
             estado['ultima_rutina_enviada'] = clave_rutina_actual
-            if riesgo_alto:
-                estado['ultima_notificacion_viento'] = ahora.isoformat()
         else:
             print('AVISO: reporte de rutina incompleto; se reintentara en la siguiente consulta.')
     else:
