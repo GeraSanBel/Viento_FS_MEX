@@ -46,6 +46,10 @@ INCREMENTO_ALERTA_KMH = 15
 
 # Horas hacia adelante a revisar en el pronostico
 HORAS_A_FUTURO = 18
+HORAS_LLUVIA = 24
+UMBRAL_LLUVIA_MM = 10
+UMBRAL_LLUVIA_ALTA_MM = 25
+UMBRAL_LLUVIA_CRITICA_MM = 50
 
 # Municipios por lote. Lotes chicos = respuestas mas ligeras = menos timeouts.
 TAMANO_LOTE = 10
@@ -218,6 +222,37 @@ def extraer_peor_viento(dato_municipio):
     i = max(range(len(tiempos)), key=lambda j: max(velocidades[j], rafagas[j]))
     return velocidades[i], rafagas[i], tiempos[i]
 
+def extraer_meteorologia(dato):
+    """Ventanas UTC: lluvia de horas completas anteriores y siguientes.
+    La precipitación de Open-Meteo corresponde a la hora que termina en time.
+    """
+    h = dato.get('hourly', {})
+    tiempos = h.get('time', [])
+    n = 2 * HORAS_LLUVIA + 1
+    if len(tiempos) != n:
+        raise ValueError('Ventana meteorologica incompleta')
+    try:
+        fechas = [datetime.fromisoformat(t) for t in tiempos]
+        if any(b - a != timedelta(hours=1) for a, b in zip(fechas, fechas[1:])):
+            raise ValueError('Ventana horaria discontinua')
+    except (ValueError, TypeError):
+        raise ValueError('Fechas meteorologicas invalidas')
+    i = HORAS_LLUVIA
+    viento = {'hourly': {k: h.get(k, [])[i:i + HORAS_A_FUTURO]
+                        for k in ('time', 'wind_speed_10m', 'wind_gusts_10m')}}
+    try:
+        v = extraer_peor_viento(viento)
+    except ValueError:
+        v = None
+    p = h.get('precipitation', [])
+    def acumulado(valores):
+        if len(valores) != HORAS_LLUVIA or not all(dato_viento_valido(x) for x in valores):
+            return None
+        return round(sum(valores), 3)
+    return {'viento': v, 'lluvia_previa': acumulado(p[1:i+1]),
+            'lluvia_futura': acumulado(p[i+1:i+1+HORAS_LLUVIA])}
+
+
 def consultar_open_meteo(lote, intentos=1, espera=1):
     """
     Consulta varios municipios en UNA sola llamada a Open-Meteo.
@@ -230,9 +265,11 @@ def consultar_open_meteo(lote, intentos=1, espera=1):
     params = {
         'latitude': lats,
         'longitude': lons,
-        'hourly': 'wind_speed_10m,wind_gusts_10m',
+        'hourly': 'wind_speed_10m,wind_gusts_10m,precipitation',
         'wind_speed_unit': 'kmh',
-        'forecast_hours': HORAS_A_FUTURO,
+        'past_hours': HORAS_LLUVIA,
+        'forecast_hours': HORAS_LLUVIA + 1,
+        'precipitation_unit': 'mm',
         'timezone': 'UTC',
     }
 
@@ -257,7 +294,9 @@ def consultar_open_meteo(lote, intentos=1, espera=1):
         raise ValueError('Respuesta de lote incompleta')
     resultados = {}
     for (clave, _info), dato_municipio in zip(lote, datos):
-        resultados[clave] = extraer_peor_viento(dato_municipio)
+        resultados[clave] = extraer_meteorologia(dato_municipio)
+        if resultados[clave]['viento'] is None:
+            resultados[clave]['viento'] = consultar_openweather_respaldo(clave, _info)
 
     return resultados
 
@@ -314,7 +353,7 @@ def procesar_lote_adaptativo(lote):
             respaldo = consultar_openweather_respaldo(clave, info)
             if respaldo is not None:
                 print(f'  {clave}: recuperado con respaldo OWM')
-                return {clave: respaldo}
+                return {clave: {'viento': respaldo, 'lluvia_previa': None, 'lluvia_futura': None}}
             return {}
 
         print(f'  Lote de {len(lote)} fallo, dividiendo en mitades mas chicas...')
@@ -544,6 +583,8 @@ def cargar_estado():
     estado.setdefault('ultima_notificacion_ciclon', None)
     estado.setdefault('ultima_rutina_enviada', None)
     estado.setdefault('riesgos_notificados', {})
+    estado.setdefault('lluvia_notificada', {})
+    estado.setdefault('combinado_notificado', {})
     estado.setdefault('fallas_notificadas', [])
     estado.setdefault('ultima_notificacion_cobertura', None)
     return estado
@@ -855,6 +896,103 @@ def notificar_cobertura(fallas, estado, ahora):
             estado['ultima_notificacion_cobertura'] = None
 
 
+def nivel_lluvia(mm):
+    if mm >= UMBRAL_LLUVIA_CRITICA_MM:
+        return 3
+    if mm >= UMBRAL_LLUVIA_ALTA_MM:
+        return 2
+    if mm > UMBRAL_LLUVIA_MM:
+        return 1
+    return 0
+
+
+def clasificar_lluvia(entrada):
+    """Un periodo disponible puede confirmar riesgo, pero no descartar el otro."""
+    valores = [entrada.get('lluvia_previa'), entrada.get('lluvia_futura')]
+    validos = [v for v in valores if v is not None]
+    nivel = nivel_lluvia(max(validos)) if validos else 0
+    return nivel if nivel or len(validos) == 2 else None
+
+
+def clasificar_combinado(entrada):
+    lluvia = clasificar_lluvia(entrada)
+    viento = entrada.get('maximo')
+    if lluvia is not None and lluvia > 0 and viento is not None and viento >= UMBRAL_ALTO_KMH:
+        return max(lluvia, 3 if viento >= UMBRAL_CRITICO_KMH else 2)
+    if viento is not None and viento < UMBRAL_ALTO_KMH:
+        return 0
+    if lluvia == 0:
+        return 0
+    return None
+
+
+def formatear_lluvia(entrada):
+    def mm(v):
+        return 'sin datos' if v is None else f'{v:.1f} mm'
+    texto = (f"📍 <b>{esc(nombre_amigable(entrada['ciudad']))}</b> · "
+             f"{esc(nombre_amigable(entrada['estado']))}\n"
+             f"Últimas 24 h (estimadas): {mm(entrada.get('lluvia_previa'))}\n"
+             f"Próximas 24 h: {mm(entrada.get('lluvia_futura'))}")
+    if entrada.get('maximo') is not None:
+        texto += f"\nViento/rachas máximas próximas 18 h: {entrada['maximo']:.0f} km/h"
+    else:
+        texto += '\nViento: sin datos'
+    return texto
+
+
+def mensajes_lluvia(pares, titulo):
+    regiones = {}
+    for clave, entrada in pares:
+        regiones.setdefault(region_de(entrada['estado']), []).append(entrada)
+    mensajes = []
+    for zona in ORDEN_REGIONES:
+        if zona in regiones:
+            entradas = sorted(regiones[zona], key=lambda e: max(
+                (v for v in (e.get('lluvia_previa'), e.get('lluvia_futura')) if v is not None),
+                default=0), reverse=True)
+            cabecera = f"{titulo}\n📍 <b>ZONA {zona}</b>"
+            mensajes.extend(dividir_en_mensajes(cabecera, cabecera + ' (cont.)',
+                                                [formatear_lluvia(e) for e in entradas]))
+    return mensajes
+
+
+def notificar_lluvia(observaciones, estado, ahora, combinado=False):
+    campo = 'combinado_notificado' if combinado else 'lluvia_notificada'
+    anteriores = estado.setdefault(campo, {})
+    grupos = {}
+    for clave, entrada in observaciones.items():
+        nivel = clasificar_combinado(entrada) if combinado else clasificar_lluvia(entrada)
+        if nivel is None:
+            continue
+        previo = anteriores.get(clave)
+        anterior = previo['nivel'] if previo else 0
+        # Sin ambas ventanas de lluvia no se confirma un descenso de precipitación.
+        incompleta = any(entrada.get(k) is None for k in ('lluvia_previa', 'lluvia_futura'))
+        if nivel < anterior and incompleta and not (combinado and entrada.get('maximo') is not None and entrada['maximo'] < UMBRAL_ALTO_KMH):
+            continue
+        if nivel > anterior:
+            motivo = 'NUEVO' if anterior == 0 else 'ESCALAMIENTO'
+        elif nivel < anterior:
+            motivo = 'DISMINUCIÓN'
+        elif nivel > 0 and recordatorio_vencido(ahora, previo['ultima']):
+            motivo = 'RECORDATORIO'
+        else:
+            continue
+        grupos.setdefault((nivel, motivo), []).append((clave, entrada))
+    for (nivel, motivo), pares in sorted(grupos.items(), key=lambda g: -g[0][0]):
+        etiqueta = ('NORMAL' if nivel == 0 else ('PREVENTIVO', 'ALTO', 'CRÍTICO')[nivel-1])
+        tipo = 'VIENTO Y LLUVIA' if combinado else 'PRECIPITACIÓN'
+        titulo = (f"<b>{motivo} · {tipo} · {etiqueta}</b>\n"
+                  "Indicador preventivo: revisar drenaje, terreno y cimentación cuando sea seguro. "
+                  "No certifica estabilidad estructural.")
+        if enviar_lista(mensajes_lluvia(pares, titulo)):
+            for clave, _ in pares:
+                if nivel:
+                    anteriores[clave] = {'nivel': nivel, 'ultima': ahora.isoformat()}
+                else:
+                    anteriores.pop(clave, None)
+
+
 def revisar_y_alertar():
     municipios = cargar_municipios()
     items = list(municipios.items())
@@ -863,6 +1001,8 @@ def revisar_y_alertar():
     sin_datos = []
     zonas_sin_datos = set()
     observaciones = {}
+    observaciones_lluvia = {}
+    sin_lluvia = []
 
     lotes = [items[i:i + TAMANO_LOTE] for i in range(0, len(items), TAMANO_LOTE)]
 
@@ -871,12 +1011,22 @@ def revisar_y_alertar():
         resultados_lote = procesar_lote_adaptativo(lote)
 
         for clave, info in lote:
-            if clave not in resultados_lote:
+            meteo = resultados_lote.get(clave, {})
+            entrada_lluvia = {
+                'ciudad': info['ciudad'], 'estado': info['estado'],
+                'lluvia_previa': meteo.get('lluvia_previa'),
+                'lluvia_futura': meteo.get('lluvia_futura'),
+                'maximo': max(meteo['viento'][:2]) if meteo.get('viento') else None,
+            }
+            observaciones_lluvia[clave] = entrada_lluvia
+            if any(entrada_lluvia[k] is None for k in ('lluvia_previa', 'lluvia_futura')):
+                sin_lluvia.append(f"Lluvia: {nombre_amigable(info['ciudad'])} ({nombre_amigable(info['estado'])})")
+            if not meteo.get('viento'):
                 sin_datos.append(f"{nombre_amigable(info['ciudad'])} ({nombre_amigable(info['estado'])})")
                 zonas_sin_datos.add(region_de(info['estado']))
                 continue
 
-            velocidad, rafaga, hora = resultados_lote[clave]
+            velocidad, rafaga, hora = meteo['viento']
             maximo = max(velocidad, rafaga)
 
             entrada = {
@@ -940,8 +1090,10 @@ def revisar_y_alertar():
                 estado['ultima_notificacion_ciclon'] = ahora.isoformat()
 
     # 2) VIENTO por localidad. Una alerta nueva no depende del estado nacional.
+    notificar_lluvia(observaciones_lluvia, estado, ahora, combinado=True)
     notificar_viento(observaciones, estado, ahora)
-    fallas = sin_datos + (['NHC/NOAA (ciclones)'] if ciclones is None else [])
+    notificar_lluvia(observaciones_lluvia, estado, ahora)
+    fallas = sin_datos + sin_lluvia + (['NHC/NOAA (ciclones)'] if ciclones is None else [])
     notificar_cobertura(fallas, estado, ahora)
     estado['viento_alto_activo'] = bool(riesgo_alto or any(
         v['nivel'] in ('ALTO', 'CRITICO') for v in estado['riesgos_notificados'].values()
@@ -973,7 +1125,11 @@ def revisar_y_alertar():
             f'💨 <b>Viento por zona</b> (≥ {UMBRAL_MODERADO_KMH} km/h, próximas {HORAS_A_FUTURO} h):',
         ]
         resumen += resumen_por_zona(riesgo, zonas_sin_datos)
-        resumen += ['', f'📡 Cobertura: {revisados} de {len(items)} municipios revisados']
+        lluvia_activa = [(k, e) for k, e in observaciones_lluvia.items() if (clasificar_lluvia(e) or 0) > 0]
+        combinadas = sum((clasificar_combinado(e) or 0) > 0 for e in observaciones_lluvia.values())
+        resumen += ['', f'🌧 Precipitación >10 mm/24 h: {len(lluvia_activa)} localidades',
+                    f'Viento y lluvia: {combinadas} localidades',
+                    f'📡 Cobertura viento: {revisados} de {len(items)}; lluvia completa: {len(items)-len(sin_lluvia)} de {len(items)}']
 
         mensajes = ['\n'.join(resumen)]
 
@@ -982,6 +1138,8 @@ def revisar_y_alertar():
             f"<i>🟣 90+ km/h · 🔴 60 a 89 km/h · 🟡 45 a 59 km/h</i>"
         )
         mensajes += construir_mensajes_viento(riesgo, titulo_rutina)
+        if lluvia_activa:
+            mensajes += mensajes_lluvia(lluvia_activa, '🌧 <b>PRECIPITACIÓN · REPORTE DE RUTINA</b>')
         if aviso_cobertura:
             mensajes.append(aviso_cobertura)
 
