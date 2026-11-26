@@ -2,18 +2,26 @@ name: Alerta de Viento
 
 on:
   schedule:
-    - cron: "0 * * * *"
+    - cron: "7 2,5,8,11,14,17,20,23 * * *"
+    - cron: "37 0,3,6,9,12,15,18,21 * * *"
   workflow_dispatch: {}
 
 permissions:
   contents: write
 
+concurrency:
+  group: viento-${{ github.ref }}
+  cancel-in-progress: false
+
 jobs:
   revisar-viento:
     runs-on: ubuntu-latest
+    timeout-minutes: 25
     steps:
       - name: Clonar repositorio
         uses: actions/checkout@v4
+        with:
+          ref: ${{ github.ref }}
 
       - name: Configurar Python
         uses: actions/setup-python@v5
@@ -23,23 +31,32 @@ jobs:
       - name: Instalar dependencias
         run: pip install requests
 
-      - name: Probar envio a Telegram (sin pronostico)
-        if: ${{ github.event_name == 'workflow_dispatch' && github.ref_name == 'mejoras/seguridad-v2' }}
-        env:
-          TELEGRAM_TOKEN: ${{ secrets.TELEGRAM_TOKEN }}
-          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+      - name: Validar logica de rutina y envio (sin red)
         run: |
+          python -m py_compile alerta_viento.py
           python - <<'PY'
+          from datetime import datetime, timezone
+          from unittest.mock import patch
           import alerta_viento as bot
-          if not bot.TELEGRAM_TOKEN or not bot.TELEGRAM_CHAT_ID:
-              raise SystemExit('Faltan credenciales de Telegram.')
-          if not bot.enviar_telegram('✅ PRUEBA DE COMUNICACIÓN · FS Alerta Climática. No es una alerta meteorológica.'):
-              raise SystemExit('Telegram no confirmó el envío.')
-          print('Telegram confirmó el envío de prueba.')
+          def dt(day, hour, minute=0):
+              return datetime(2026, 11, day, hour, minute, tzinfo=timezone.utc)
+          assert bot.rutina_por_enviar(dt(26, 14, 7), '2026-11-26-03') == '2026-11-26-14'
+          assert bot.rutina_por_enviar(dt(26, 17), '2026-11-26-03') == '2026-11-26-14'
+          assert bot.rutina_por_enviar(dt(26, 17), '2026-11-26-14') is None
+          assert bot.rutina_por_enviar(dt(26, 22), '2026-11-26-03') == '2026-11-26-21'
+          assert bot.rutina_por_enviar(dt(27, 1), '2026-11-26-14') == '2026-11-26-21'
+          assert bot.rutina_por_enviar(dt(27, 3, 37), '2026-11-26-21') == '2026-11-27-03'
+          assert bot.rutina_por_enviar(dt(26, 13), None) == '2026-11-26-03'
+          with patch.object(bot.time, 'sleep'), patch.object(bot, 'enviar_telegram', side_effect=[True, False]) as envio:
+              assert bot.enviar_lista(['a', 'b']) is False
+              assert envio.call_count == 2
+          with patch.object(bot.time, 'sleep'), patch.object(bot, 'enviar_telegram', return_value=True):
+              assert bot.enviar_lista(['a', 'b']) is True
+          print('OK: 9 pruebas de rutina y confirmacion de envio (sin red).')
           PY
 
       - name: Ejecutar alerta
-        if: ${{ github.event_name != 'workflow_dispatch' || github.ref_name != 'mejoras/seguridad-v2' }}
+        if: ${{ github.ref_name == 'main' }}
         env:
           OWM_API_KEY: ${{ secrets.OWM_API_KEY }}
           TELEGRAM_TOKEN: ${{ secrets.TELEGRAM_TOKEN }}
@@ -47,10 +64,12 @@ jobs:
         run: python alerta_viento.py
 
       - name: Guardar estado
-        if: ${{ github.event_name != 'workflow_dispatch' || github.ref_name != 'mejoras/seguridad-v2' }}
+        if: ${{ github.ref_name == 'main' }}
         run: |
           git config user.name "github-actions"
           git config user.email "actions@github.com"
           git add estado_alertas.json
-          git diff --quiet --cached || git commit -m "Actualizar estado de alertas [skip ci]"
-          git push
+          if ! git diff --quiet --cached; then
+            git commit -m "Actualizar estado de alertas [skip ci]"
+            git push origin HEAD:main
+          fi
