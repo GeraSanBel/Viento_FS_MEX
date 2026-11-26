@@ -1,0 +1,102 @@
+name: Piloto web Shadow 36h
+on:
+  workflow_dispatch:
+    inputs:
+      accion:
+        description: "Preparar web sin consultas, iniciar 36 h, o detener"
+        required: true
+        default: preparar
+        type: choice
+        options:
+          - preparar
+          - iniciar
+          - detener
+  schedule:
+    - cron: "7 2,5,8,11,14,17,20,23 * * *"
+    - cron: "37 0,3,6,9,12,15,18,21 * * *"
+permissions:
+  contents: read
+concurrency:
+  group: shadow-pilot-36h
+  cancel-in-progress: false
+jobs:
+  corte:
+    if: ${{ github.ref_name == 'main' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    permissions:
+      contents: write
+    outputs:
+      publicar: ${{ steps.control.outputs.publicar }}
+    steps:
+      - name: Clonar rama exclusiva del piloto
+        uses: actions/checkout@v4
+        with:
+          ref: piloto/shadow-36h
+      - name: Configurar Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Validar ventana y reservar corte
+        id: control
+        env:
+          ACCION: ${{ github.event_name == 'schedule' && 'cron' || inputs.accion }}
+        run: |
+          python -m unittest -v test_pilot_control
+          python pilot_control.py "$ACCION"
+      - name: Registrar reserva o estado antes de consultar
+        if: steps.control.outputs.publicar == 'true'
+        run: |
+          git config user.name "github-actions"
+          git config user.email "actions@github.com"
+          if [ -d docs/data ]; then
+            git add docs/data
+            if ! git diff --cached --quiet; then
+              git commit -m "Shadow piloto: reservar corte o actualizar estado [skip ci]"
+              git push origin HEAD:piloto/shadow-36h
+            fi
+          fi
+      - name: Instalar dependencia meteorologica
+        if: steps.control.outputs.consultar == 'true'
+        run: pip install requests
+      - name: Evaluar meteorologia sin enviar Telegram
+        id: meteo
+        if: steps.control.outputs.consultar == 'true'
+        continue-on-error: true
+        run: |
+          python - <<'PY'
+          from datetime import datetime, timezone, timedelta
+          from pilot_control import leer, utc
+          if datetime.now(timezone.utc)+timedelta(minutes=4)>=utc(leer()["fin_utc"]):
+              raise SystemExit("Ventana restante insuficiente; no consultar")
+          PY
+          timeout 180s python shadow_eval.py --evaluacion-real --salida shadow_corte.json
+      - name: Cerrar y conservar el corte
+        if: ${{ always() && steps.control.outputs.consultar == 'true' && steps.meteo.outcome != 'skipped' }}
+        env:
+          SLOT: ${{ steps.control.outputs.slot }}
+        run: |
+          python pilot_control.py cerrar --slot "$SLOT"
+          git add docs/data
+          git commit -m "Shadow piloto: conservar corte [skip ci]"
+          git push origin HEAD:piloto/shadow-36h
+      - name: Empaquetar solo la web publica
+        if: steps.control.outputs.publicar == 'true'
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: docs
+  publicar:
+    needs: corte
+    if: needs.corte.outputs.publicar == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Publicar piloto
+        id: deployment
+        uses: actions/deploy-pages@v4
