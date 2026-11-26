@@ -30,8 +30,8 @@ import requests
 
 # ============ CONFIGURACION ============
 
-TELEGRAM_TOKEN = os.environ.get('TELEGRAM_TOKEN', '8697170500:AAFc6vJ_VGSreH9B_FraDFrMdQjViEr21DE')
-TELEGRAM_CHAT_ID = os.environ.get('TELEGRAM_CHAT_ID', '8993916335')
+TELEGRAM_TOKEN = os.environ.get('TELEGRAM_TOKEN', '').strip()
+TELEGRAM_CHAT_ID = os.environ.get('TELEGRAM_CHAT_ID', '').strip()
 
 # API key de OpenWeatherMap, usada SOLO como respaldo si Open-Meteo falla
 OWM_API_KEY = os.environ.get('OWM_API_KEY', '')
@@ -287,7 +287,7 @@ def consultar_openweather_respaldo(clave, info):
         respuesta.raise_for_status()
         datos = respuesta.json()
     except Exception as error:
-        print(f'    Respaldo OWM tambien fallo para {clave}: {error}')
+        print(f'    Respaldo OWM tambien fallo para {clave}: {type(error).__name__}')
         return None
 
     bloques = max(1, HORAS_A_FUTURO // 3)
@@ -588,7 +588,7 @@ def enviar_telegram(texto):
                 print(f'Telegram: fallo ({respuesta.status_code}) - {respuesta.text[:200]}')
         except Exception as error:
             todo_ok = False
-            print(f'Telegram: error de conexion - {error}')
+            print(f'Telegram: error de conexion - {type(error).__name__}')
 
     print('Telegram: mensaje enviado' if todo_ok else 'Telegram: fallo parcial o total')
     return todo_ok
@@ -613,7 +613,7 @@ def enviar_foto_telegram(imagen_bytes, texto):
             return True
         print(f'Telegram: fallo al enviar imagen ({respuesta.status_code}) - {respuesta.text[:200]}')
     except Exception as error:
-        print(f'Telegram: error enviando imagen - {error}')
+        print(f'Telegram: error enviando imagen - {type(error).__name__}')
     return False
 
 
@@ -653,7 +653,7 @@ def enviar_ubicacion_ciclon(ciclon):
             return True
         print(f'Telegram: fallo al enviar ubicacion ({respuesta.status_code}) - {respuesta.text[:200]}')
     except Exception as error:
-        print(f'Telegram: error enviando ubicacion - {error}')
+        print(f'Telegram: error enviando ubicacion - {type(error).__name__}')
     return False
 
 
@@ -928,4 +928,6 @@ def revisar_y_alertar():
 
 
 if __name__ == '__main__':
+    if not TELEGRAM_TOKEN or not TELEGRAM_CHAT_ID:
+        raise SystemExit('Faltan las variables TELEGRAM_TOKEN o TELEGRAM_CHAT_ID. Configura GitHub Secrets.')
     revisar_y_alertar()
