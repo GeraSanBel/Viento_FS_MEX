@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "estado": "ACTIVO",
+  "estado": "DETENIDO",
   "inicio_utc": "2026-11-26T21:37:00+00:00",
   "fin_utc": "2026-11-28T09:37:00+00:00",
   "intervalo_min": 90,
