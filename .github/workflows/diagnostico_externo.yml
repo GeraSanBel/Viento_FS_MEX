@@ -1,0 +1,19 @@
+name: Diagnostico programador externo
+on:
+  workflow_dispatch: {}
+permissions: {}
+concurrency:
+  group: diagnostico-externo
+  cancel-in-progress: false
+jobs:
+  latido:
+    if: ${{ github.ref_name == 'main' && github.event_name == 'workflow_dispatch' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 2
+    steps:
+      - name: Registrar activacion externa
+        run: |
+          echo "Evento: workflow_dispatch"
+          echo "Inicio real UTC:"
+          date -u '+%Y-%m-%dT%H:%M:%SZ'
+          echo "Diagnostico sin consultas meteorologicas, sin secretos y sin Telegram."
