@@ -55,6 +55,9 @@ jobs:
           print('OK: 9 pruebas de rutina y confirmacion de envio (sin red).')
           PY
 
+      - name: Validar motor por localidad y fallos de fuentes (sin red)
+        run: python -m unittest -v test_motor_alertas
+
       - name: Ejecutar alerta
         if: ${{ github.ref_name == 'main' }}
         env:
