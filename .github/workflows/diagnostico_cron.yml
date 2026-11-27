@@ -1,0 +1,23 @@
+name: Diagnostico temporal del programador
+on:
+  workflow_dispatch: {}
+  schedule:
+    - cron: "11,26,41,56 1,2 27 11 *"
+permissions: {}
+jobs:
+  latido:
+    runs-on: ubuntu-latest
+    timeout-minutes: 2
+    steps:
+      - name: Registrar activacion sin red ni secretos
+        env:
+          EVENTO: ${{ github.event_name }}
+          CRON: ${{ github.event.schedule }}
+          RAMA: ${{ github.ref_name }}
+        run: |
+          echo "Evento: $EVENTO"
+          echo "Cron: $CRON"
+          echo "Rama: $RAMA"
+          echo "Hora UTC real:"
+          date -u '+%Y-%m-%dT%H:%M:%SZ'
+          echo "Diagnostico exclusivamente del disparador de GitHub; sin consultas meteorologicas, sin Telegram."
