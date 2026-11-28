@@ -1,19 +1,17 @@
-name: Piloto web Shadow 36h
+name: Piloto web Shadow 24h
 on:
   workflow_dispatch:
     inputs:
       accion:
-        description: "Preparar web sin consultas, iniciar 36 h, o detener"
+        description: "Preparar web, iniciar 24 h, ejecutar corte o detener"
         required: true
         default: preparar
         type: choice
         options:
           - preparar
-          - iniciar
+          - iniciar24
+          - cron
           - detener
-  schedule:
-    - cron: "7 2,5,8,11,14,17,20,23 * * *"
-    - cron: "37 0,3,6,9,12,15,18,21 * * *"
 permissions:
   contents: read
 concurrency:
@@ -40,7 +38,7 @@ jobs:
       - name: Validar ventana y reservar corte
         id: control
         env:
-          ACCION: ${{ github.event_name == 'schedule' && 'cron' || inputs.accion }}
+          ACCION: ${{ inputs.accion }}
         run: |
           python -m unittest -v test_pilot_control
           python pilot_control.py "$ACCION"
