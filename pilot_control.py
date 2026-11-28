@@ -3,9 +3,9 @@ import argparse,json,os
 from datetime import datetime,timedelta,timezone
 from pathlib import Path
 
-N=24
+N=16
 PASO=timedelta(minutes=90)
-BASE=datetime(2026,1,1,0,37,tzinfo=timezone.utc)
+BASE=datetime(2026,1,1,0,0,tzinfo=timezone.utc)
 DATA=Path("docs/data")
 STATE=DATA/"pilot.json"
 
@@ -40,13 +40,20 @@ def salida(**kw):
 
 def main():
     p=argparse.ArgumentParser()
-    p.add_argument("accion",choices=["preparar","iniciar","detener","cron","cerrar"])
+    p.add_argument("accion",choices=["preparar","iniciar","iniciar24","detener","cron","cerrar"])
     p.add_argument("--slot",type=int)
     p.add_argument("--archivo",default="shadow_corte.json")
     a=p.parse_args()
     ahora=datetime.now(timezone.utc)
     s=leer()
     if a.accion=="preparar":
+        salida(consultar="false",publicar="true")
+        return
+    if a.accion=="iniciar24":
+        archivo=DATA/"pilot-36h-archivado.json"
+        if not s or s.get("estado")!="DETENIDO" or s.get("objetivo")!=24 or s.get("cortes") or not archivo.exists() or json.loads(archivo.read_text())!=s:
+            raise SystemExit("Piloto previo no archivado o piloto 24 h ya iniciado")
+        guardar(nuevo(ahora))
         salida(consultar="false",publicar="true")
         return
     if a.accion=="iniciar":
