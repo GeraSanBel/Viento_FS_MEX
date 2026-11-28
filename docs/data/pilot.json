@@ -68,7 +68,21 @@
       "slot": 3,
       "programado_utc": "2026-11-28T06:00:00+00:00",
       "intento_utc": "2026-11-28T06:00:09.871941+00:00",
-      "estado": "RESERVADO"
+      "estado": "COMPLETO",
+      "archivo": "corte-03.json",
+      "resumen": {
+        "puntos": 214,
+        "comparables": 214,
+        "coincidentes": 214,
+        "incompletos": 0,
+        "eventos": {
+          "LLUVIA ACUMULADA": 77,
+          "SIN ALERTA": 135,
+          "VIENTO ALTO": 2
+        },
+        "viento_moderado": 3
+      },
+      "fin_utc": "2026-11-28T06:00:48.308280+00:00"
     }
   ]
 }
