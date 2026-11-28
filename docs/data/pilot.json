@@ -1,0 +1,243 @@
+{
+  "version": 1,
+  "estado": "ACTIVO",
+  "inicio_utc": "2026-11-28T01:30:00+00:00",
+  "fin_utc": "2026-11-29T01:30:00+00:00",
+  "intervalo_min": 90,
+  "objetivo": 16,
+  "fuente": "Open-Meteo, datos CC BY 4.0; evaluacion tecnica",
+  "cortes": [
+    {
+      "slot": 0,
+      "programado_utc": "2026-11-28T01:30:00+00:00",
+      "intento_utc": "2026-11-28T01:30:09.938003+00:00",
+      "estado": "COMPLETO",
+      "archivo": "corte-00.json",
+      "resumen": {
+        "puntos": 214,
+        "comparables": 214,
+        "coincidentes": 214,
+        "incompletos": 0,
+        "eventos": {
+          "LLUVIA ACUMULADA": 79,
+          "SIN ALERTA": 135
+        },
+        "viento_moderado": 5
+      },
+      "fin_utc": "2026-11-28T01:30:49.145023+00:00"
+    },
+    {
+      "slot": 1,
+      "programado_utc": "2026-11-28T03:00:00+00:00",
+      "intento_utc": "2026-11-28T03:00:07.406568+00:00",
+      "estado": "COMPLETO",
+      "archivo": "corte-01.json",
+      "resumen": {
+        "puntos": 214,
+        "comparables": 214,
+        "coincidentes": 214,
+        "incompletos": 0,
+        "eventos": {
+          "LLUVIA ACUMULADA": 78,
+          "SIN ALERTA": 136
+        },
+        "viento_moderado": 6
+      },
+      "fin_utc": "2026-11-28T03:00:45.494380+00:00"
+    },
+    {
+      "slot": 2,
+      "programado_utc": "2026-11-28T04:30:00+00:00",
+      "intento_utc": "2026-11-28T04:30:08.059282+00:00",
+      "estado": "COMPLETO",
+      "archivo": "corte-02.json",
+      "resumen": {
+        "puntos": 214,
+        "comparables": 214,
+        "coincidentes": 214,
+        "incompletos": 0,
+        "eventos": {
+          "LLUVIA ACUMULADA": 77,
+          "SIN ALERTA": 137
+        },
+        "viento_moderado": 3
+      },
+      "fin_utc": "2026-11-28T04:30:46.109922+00:00"
+    },
+    {
+      "slot": 3,
+      "programado_utc": "2026-11-28T06:00:00+00:00",
+      "intento_utc": "2026-11-28T06:00:09.871941+00:00",
+      "estado": "COMPLETO",
+      "archivo": "corte-03.json",
+      "resumen": {
+        "puntos": 214,
+        "comparables": 214,
+        "coincidentes": 214,
+        "incompletos": 0,
+        "eventos": {
+          "LLUVIA ACUMULADA": 77,
+          "SIN ALERTA": 135,
+          "VIENTO ALTO": 2
+        },
+        "viento_moderado": 3
+      },
+      "fin_utc": "2026-11-28T06:00:48.308280+00:00"
+    },
+    {
+      "slot": 4,
+      "programado_utc": "2026-11-28T07:30:00+00:00",
+      "intento_utc": "2026-11-28T07:30:08.408867+00:00",
+      "estado": "COMPLETO",
+      "archivo": "corte-04.json",
+      "resumen": {
+        "puntos": 214,
+        "comparables": 214,
+        "coincidentes": 214,
+        "incompletos": 0,
+        "eventos": {
+          "LLUVIA ACUMULADA": 77,
+          "SIN ALERTA": 137
+        },
+        "viento_moderado": 4
+      },
+      "fin_utc": "2026-11-28T07:30:47.398142+00:00"
+    },
+    {
+      "slot": 5,
+      "programado_utc": "2026-11-28T09:00:00+00:00",
+      "intento_utc": "2026-11-28T09:00:09.153006+00:00",
+      "estado": "COMPLETO",
+      "archivo": "corte-05.json",
+      "resumen": {
+        "puntos": 214,
+        "comparables": 214,
+        "coincidentes": 214,
+        "incompletos": 0,
+        "eventos": {
+          "LLUVIA ACUMULADA": 72,
+          "SIN ALERTA": 141,
+          "VIENTO Y LLUVIA": 1
+        },
+        "viento_moderado": 1
+      },
+      "fin_utc": "2026-11-28T09:00:50.142288+00:00"
+    },
+    {
+      "slot": 6,
+      "programado_utc": "2026-11-28T10:30:00+00:00",
+      "intento_utc": "2026-11-28T10:30:08.187473+00:00",
+      "estado": "COMPLETO",
+      "archivo": "corte-06.json",
+      "resumen": {
+        "puntos": 214,
+        "comparables": 214,
+        "coincidentes": 214,
+        "incompletos": 0,
+        "eventos": {
+          "LLUVIA ACUMULADA": 70,
+          "SIN ALERTA": 143,
+          "VIENTO Y LLUVIA": 1
+        },
+        "viento_moderado": 4
+      },
+      "fin_utc": "2026-11-28T10:30:46.767183+00:00"
+    },
+    {
+      "slot": 7,
+      "programado_utc": "2026-11-28T12:00:00+00:00",
+      "intento_utc": "2026-11-28T12:00:09.103553+00:00",
+      "estado": "COMPLETO",
+      "archivo": "corte-07.json",
+      "resumen": {
+        "puntos": 214,
+        "comparables": 214,
+        "coincidentes": 214,
+        "incompletos": 0,
+        "eventos": {
+          "SIN ALERTA": 145,
+          "LLUVIA ACUMULADA": 68,
+          "VIENTO Y LLUVIA": 1
+        },
+        "viento_moderado": 6
+      },
+      "fin_utc": "2026-11-28T12:00:53.512590+00:00"
+    },
+    {
+      "slot": 8,
+      "programado_utc": "2026-11-28T13:30:00+00:00",
+      "intento_utc": "2026-11-28T13:30:08.539492+00:00",
+      "estado": "COMPLETO",
+      "archivo": "corte-08.json",
+      "resumen": {
+        "puntos": 214,
+        "comparables": 214,
+        "coincidentes": 214,
+        "incompletos": 0,
+        "eventos": {
+          "SIN ALERTA": 142,
+          "LLUVIA ACUMULADA": 72
+        },
+        "viento_moderado": 10
+      },
+      "fin_utc": "2026-11-28T13:30:47.163870+00:00"
+    },
+    {
+      "slot": 9,
+      "programado_utc": "2026-11-28T15:00:00+00:00",
+      "intento_utc": "2026-11-28T15:00:10.937848+00:00",
+      "estado": "COMPLETO",
+      "archivo": "corte-09.json",
+      "resumen": {
+        "puntos": 214,
+        "comparables": 214,
+        "coincidentes": 214,
+        "incompletos": 0,
+        "eventos": {
+          "SIN ALERTA": 147,
+          "LLUVIA ACUMULADA": 67
+        },
+        "viento_moderado": 8
+      },
+      "fin_utc": "2026-11-28T15:00:50.640572+00:00"
+    },
+    {
+      "slot": 10,
+      "programado_utc": "2026-11-28T16:30:00+00:00",
+      "intento_utc": "2026-11-28T16:30:08.633387+00:00",
+      "estado": "COMPLETO",
+      "archivo": "corte-10.json",
+      "resumen": {
+        "puntos": 214,
+        "comparables": 214,
+        "coincidentes": 214,
+        "incompletos": 0,
+        "eventos": {
+          "SIN ALERTA": 151,
+          "LLUVIA ACUMULADA": 63
+        },
+        "viento_moderado": 9
+      },
+      "fin_utc": "2026-11-28T16:30:47.561502+00:00"
+    },
+    {
+      "slot": 11,
+      "programado_utc": "2026-11-28T18:00:00+00:00",
+      "intento_utc": "2026-11-28T18:00:10.011263+00:00",
+      "estado": "COMPLETO",
+      "archivo": "corte-11.json",
+      "resumen": {
+        "puntos": 214,
+        "comparables": 214,
+        "coincidentes": 214,
+        "incompletos": 0,
+        "eventos": {
+          "SIN ALERTA": 157,
+          "LLUVIA ACUMULADA": 57
+        },
+        "viento_moderado": 8
+      },
+      "fin_utc": "2026-11-28T18:00:48.883081+00:00"
+    }
+  ]
+}

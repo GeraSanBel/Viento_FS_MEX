@@ -4,7 +4,13 @@ on:
   schedule:
     - cron: "7 2,5,8,11,14,17,20,23 * * *"
     - cron: "37 0,3,6,9,12,15,18,21 * * *"
-  workflow_dispatch: {}
+  workflow_dispatch:
+    inputs:
+      shadow_real:
+        description: 'Un corte real de evaluacion tecnica (214 localidades publicas)'
+        type: boolean
+        default: false
+        required: false
 
 permissions:
   contents: write
@@ -68,6 +74,22 @@ jobs:
 
       - name: Validar interfaz piloto (sin red)
         run: node app/test_app.cjs
+
+      - name: Validar comparador shadow sin red
+        run: python -m unittest -v test_shadow_eval
+
+      - name: Corte meteorologico real aislado
+        if: ${{ github.ref_name == 'piloto/shadow-36h' && github.event_name == 'workflow_dispatch' && inputs.shadow_real }}
+        run: python shadow_eval.py --evaluacion-real --salida shadow_corte.json
+
+      - name: Conservar corte publico sin inventario privado
+        if: ${{ always() && github.ref_name == 'piloto/shadow-36h' && github.event_name == 'workflow_dispatch' && inputs.shadow_real }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: shadow-corte-${{ github.run_id }}
+          path: shadow_corte.json
+          retention-days: 7
+          if-no-files-found: warn
 
       - name: Ejecutar alerta
         if: ${{ github.ref_name == 'main' }}
