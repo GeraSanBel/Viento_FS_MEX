@@ -63,6 +63,12 @@
         "viento_moderado": 3
       },
       "fin_utc": "2026-11-28T04:30:46.109922+00:00"
+    },
+    {
+      "slot": 3,
+      "programado_utc": "2026-11-28T06:00:00+00:00",
+      "intento_utc": "2026-11-28T06:00:09.871941+00:00",
+      "estado": "RESERVADO"
     }
   ]
 }
