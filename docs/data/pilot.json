@@ -6,5 +6,12 @@
   "intervalo_min": 90,
   "objetivo": 16,
   "fuente": "Open-Meteo, datos CC BY 4.0; evaluacion tecnica",
-  "cortes": []
+  "cortes": [
+    {
+      "slot": 0,
+      "programado_utc": "2026-11-28T01:30:00+00:00",
+      "intento_utc": "2026-11-28T01:30:09.938003+00:00",
+      "estado": "RESERVADO"
+    }
+  ]
 }
